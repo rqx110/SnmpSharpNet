@@ -1,0 +1,328 @@
+﻿0.9.4
+* added support for 2 phase discovery in async requests (UdpTarget class)
+* removed redundant code from Oid.encode method (thanks a.jackson)
+* changed SnmpExceptions codes so RequestTimeout and InvalidIAgentParameters no longer have the same value (thanks m.mckenna)
+0.9.3
+* bugfix(3599935): updated TimeTicks.Milliseconds to return Int64 value and fix the overflow issue
+* issue(3590221): added COPYING file to the distribution with the license rules
+0.9.2
+* fixed AES192/AES256 short key extend operation in PrivacyAES.ExtendShortKey(...) method
+0.9.1
+* changed SnmpConstants class Oid class initializers to use uint[] instead of int[] constructor values
+* added Oid.NullOid() static method. Returns new Oid instance with 0.0 value
+* bugfix: SimpleSnmp.GetBulk(string[]) always made GetBulk requests with MaxRepetition value of 100
+* added static methods Pdu.GetPdu(), Pdu.SetPdu(), Pdu.GetNextPdu(), Pdu.GetBulkPdu(). Helpers to create appropriate Pdu's for each request type
+* bugfix (thanks rdosen): changed OctetString(String) constructor to call OctetString.Set(string) method that checks if parameter is null or empty and properly initializes the class
+* improvement (thanks rlawley): added SnmpVariableType class containing constants for each SNMP variable type usable in switch/case evaluations of SNMP variables
+* improvement (thanks mpecenka): changed Oid.CompareExact() to take the actual Oid values in the account during comparison other then using length as first level determination in comparison
+* bugfix: removed checks of Socket.AddressFamily when socket variable is null (would have resulted in exception)
+0.9.0
+* changed Oid class from int (singed integer) to uint (unsigned integer) array based class
+* changed Oid.Compare(int) to Oid.Compare(uint)
+* changed Oid.CompareExact(int) to Oid.CompareExact(UInt32)
+* changed Oid.GetData() from int[] to UInt32[] return
+* changed Oid.ToArray() from int[] to UInt32[] return
+* changed Oid.this[index] from int to UInt32 return. This method now throws OverflowException when index outside the bounds of the Oid is requested
+* changed Oid.GetChildIdentifiers(...) to return UInt32[] (instead of int[])
+* changed Oid.operator+(Oid,int[]) to Oid.operator+(Oid,UInt32[])
+* changed Oid.operator+(Oid,int) to Oid.operator+(Oid,UInt32)
+* changed explicit Oid.operator int[](Oid) to Oid.operator UInt32[](Oid)
+* changed protected method Oid.encodeInstance(int) to Oid.encodeInstance(UInt32)
+* modified Oid.decode() method to deal with UInt32 value decoding
+* modified Oid.Parse(string) method to deal with UInt32 Oid parsing
+* changed IEnumerator<int> Oid.GetEnumerator() to IEnumerator<UInt32> Oid.GetEnumerator()
+* Oid.Equals(object) changed so it no longer compares against int[]. It now supports comparison with UInt32[]
+0.8.6
+* Speed up authentication/privacy operations in SNMPv3 (discovered and solution suggested by Pavel Tatarinov):
+** added new authenticateIncomingMsg method to AuthenticationMD5 and AuthenticationSHA1 that accepts pre-generated authKey
+** added new authenticate method to AuthenticationMD5 and AuthenticationSHA1 that accepts pre-generated authKey
+** cleanup: removed authenticateOutgoingMsg(...) method from AuthenticationMD5 and AuthenticationSHA1 (not used)
+** cleanup: removed authenticateMessage(...) method from AuthenticateMD5 and AuthenticateSHA1 (not used)
+** added new UserSecurityModel.IsAuthentic(...) and UserSecurityModel.Authenticate(...) overrides that accepts pre-generated authentication key
+** added SnmpV3Packet methods GenerateAuthenticationKey() and GeneratePrivacyKey() methods to simplify key generation
+** added SnmpV3Packet encode/decode methods that accept pre-generated privacy and authentication keys
+** fixed key generationa and extending in SnmpV3Packet.decode() to instead call IPrivacyProtocol.PasswordToKey(...) method
+** added PrivacyKey and AuthenticationKey properties to SecureAgentParameters class for get/set access of cached key values
+** added SecureAgentParameters.BuildCachedSecurityKeys() method to generate cached privacy/authentication key values and store them in the class
+** added SecureAgentParameters.HasCachedKeys property. Returns true if required priv and auth cached keys is present
+** added SecureAgentParameters.ResetKeys() method to clear auth and priv keys without impacting the rest of the values
+** updated UdpTarget.Request method to use cached auth/priv key values if they are available
+** updated UdpTarget.RequestAsync and UdpTarget.AsyncResponse to use cached auth/priv keys if available
+* bugfix 3232436 - phase 1 (thanks jcanady):
+** implemented 2 phase discovery process in UdpTarget.Discovery(...) method. Async method 2 phase discovery support is still outstanding
+0.8.5
+* improvement 3155967 (thanks anonymous): changed VbCollection copy constructor now takes IEnumerable<Vb> as first param instead of VbCollection
+* Changed VbCollection.Set(VbCollection second) to VbCollection.Set(IEnumerable<Vb> second)
+* added VbCollection.Set(IEnumerable<Oid>) method
+* added OctetString.Clear() method
+* added MutableByte.Clear() method
+* added convenience classes to SecureAgentParameters, noAuthNoPriv(), authNoPriv nad authPriv, to allow for quick and easy way to add security information after discovery is completed
+0.8.4
+* fixed bug in SecureAgentParameters.ValidateIncomingPacket() method that incorrectly checked PduType.Response PDUs instead of PduType.Report
+0.8.3
+* changed SnmpAuthenticationException accessibility to public
+* changed SnmpInvalidPduTypeException accessibility to public
+* changed SnmpInvalidVersionException accessibility to public
+* changed SnmpPrivacyException accessibility to public
+0.8.2
+* bufix 3106337 (thanks anonymous):
+** fix type conversion in Oid/OctetString/Pdu.GetEnumerator method
+0.8.1
+* bugfix 3102654 (thanks agutzeit):
+** TimeTicks operator TimeSpan() cast TimeTick value to Int64 earlier in the calculations to avoid overflow
+0.8.0
+* bugfix 3065736 (thanks bratmn): 
+** UdpTransport.ReceiveBegin now monitors all exceptions generated by BeginReceiveFrom method
+** UdpTransport.SendToCallback() now returns on exception instead of trying to receive data
+* UdpTransport.ReceiveBegin no longer initiates the retry timer on BeginReceiveFrom exception
+* Added support for InterNetworkV6 address family to UdpTransport class
+* changed UdpTransport constructor to receive useIPv6 parameter
+* Moved socket initialization code from the UdpTransport constructor to private method UdpTransport.initSocket
+* Added base class socket re-initialization to UdpTarget.Address property when address family changes (change IPv4 <-> IPv6)
+* Updated UdpTarget constructor call to the base class (UdpTransport) constructor with a correct address family flag for the requested peer address
+* bugfix 3078149 (from anonymous):
+** fixed 'no source check' setting check in UdpTransport.Request
+* changed response peer check from string based comparison to IPEndPoint.Equals() comparison
+0.7.9
+* added AgentParameters.DisableReplySourceCheck flag that disables checking of host IP/port information on received replies. By default set to false
+* renamed property TimeTicks.Milisecond to correct spelling TimeTicks.Milliseconds
+* added IEnumerator implementation to Oid class
+* added IEnumerator implementation to OctetString class
+* Add IpAddress.Set(System.Net.IPAddress) method to match available constructors
+* replaced IpAddress.CompareTo(IPAddress) and IpAddress.CompareTo(IpAddress) with generic IpAddress.CompareTo(object) which accepts IPAddress, IpAddress, OctetString, byte[] or UInt32 argument for comparison
+* changed IpAddress.Equals(object) to process comparison with same types as IpAddress.CompareTo()
+* changed EthernetAddress constructors to call base class (OctetString) constructor during intialization and cut down on duplication of code
+* fixed OctetString.Append(string) added check for zero length string argument
+* fixed Pdu.Pdu(PduType) constructor to set MaxRepeaters to 100 and NonRepeaters to 0 if PduType == PduType.GetBulk
+* fixed Pdu.GetBulkPdu(VbCollection) to set MaxRepeaters to 100 for consistency with other methods initializing GetBulk PDUs
+* bugfix 3061831 (thanks hckling): fixed UInteger32 constructors with arguments to correctly set data type
+0.7.8
+* Changed IpAddress.NetworkMask() to use byte arrays instead of string values (small speed improvement)
+* bufix 3001092 (thanks  james-goddard) in UdpTransport.RetryAsyncRequest causing 1 retry more then specified to be made on async requests
+* fixed errors with Pdu.Clone() that made it impossible to clone PDU of type GetBulk
+* added Pdu.GetHashCode() and Pdu.Equals() overrides
+* Pdu class: added index accessors to VarBind collection (convenience only)
+* Pdu class: added enumeration support for VarBind collection (convenience only)
+* VbCollection class: added OidArray() method for easy retrieval of the Vb Oid values as an array
+* Oid: implemented IComparable interface. Needed if you intend to sort Oid arrays
+* fixed Oid.Compare(Oid) to check for argument null
+0.7.7.1
+* bugfix 2989409 (thanks mpecenka) in Oid.Compare causing invalid comparisons results and errors in Oid.IsRootOf()
+0.7.7
+* fixed Oid integer array set to null handling
+* Oid with integer array of null or length less then 2 values is encoded as SMI valid 0.0 oid
+* bugfix 2988215 (thanks mpecenka): fixed OctetStr.IsHex detection of 0x00 byte at the end of the string
+0.7.6
+* added SimpleSnmp.Valid check in SimpleSnmp.Walk method
+* added SuppressExceptions flag to SimpleSnmp class enabling exception forwarding (instead of just ignoring them). Default is true (suppress exceptions).
+* added protocol version check to SimpleSnmp.Walk(SnmpVersion, string) method
+* added SnmpErrorStatusException class for use with SimpleSnmp to communicate Snmp Status/Index PDU errors returned by agent
+* bugfix id 2954095 (thanks bratmn):
+** SnmpException.OidValueTypeChanged static int exception errorCode. Thrown in SimpleSnmp when same Oid value was retrieved more then once as part of a single operation and returned value has a different type from previously retrieved values.
+* added SnmpException.InvalidOid static int exception errorCode. Thrown when rootOid passed to SimpleSnmp.Walk is invalid
+* added check if parameter is null in UInteger32.Equals
+* Modified checking if parameters are null in UInteger32 static operator==
+* bugfix id 2963357 (thanks bratmn):
+** changed UInteger32 static operator != from using UInteger32 to operator == to avoid null parameter exceptions
+* simplified OctetString operator != to call operator == and return negative result instead to repeating the processing. Mostly for easier maintenance
+* changes added greater and less then operators to UInteger32
+* simplified Integer32 operator != to call operator == and return negative result instead to repeating the processing. Mostly for easier maintenance
+* added Pdu.ToString(), SnmpV1Packet.ToString() and SnmpV2Packet.ToString() methods
+* modified Vb.ToString() output to include value type
+* improvement (bug report: 2987091) Oid class handling of null (zero length) values:
+** fixed Oid.decode() to be able to decode Oid values of length 0 (this is invalid based on the standard but still could happen)
+** fixed Oid.ToString() to return "0.0" string when Oid value is null
+** fixed Oid.ToString(int[],...) methods to handle null parameter
+** fixed Oid.GetChildIdentifiers() method to handle null parameters
+** fixed Oid.this[int] to handle null class value
+** fixed Oid.Add(int) to add value to a null Oid value of the class
+** fixed Oid.Add(int[]) to add values to a null Oid value of the class
+** fixed null parameter checking in Oid.operator+(Oid,int[])
+** fixed null parameter checking in Oid.operator+(Oid,string)
+** fixed null parameter checking in Oid.operator+(Oid,Oid)
+** fixed null parameter checking in Oid.operator+(Oid,int)
+** fixed null parameter checking in Oid.operator> and Oid.operator<
+** fixed null parameter checking in IpAddress.CompareTo
+** fixed null parameter checking in Integer32.CompareTo(Integer32)
+0.7.5
+* fixed: socket error 10054 now throws SnmpNetworkException in UdpTransport.Request method
+* fixed: incorrect Pdu type configuration in Pdu.GetBulkPdu method
+* fixed: unsigned integer (Counter32, Gauge32) encoding bug (thanks Jozsef Horvath)
+* added ICloneable to all AsnType child classes that didn't have it
+* added IComparable interface implementation to OctetString class
+* implemented error handling in UdpTransport async methods. Now legitimate errors will result in request being aborted (same as blocking requests) with
+appropriate error code returned in the callback
+* added VbCollection.ContainsOid(Oid) method
+* added VbCollection index access to variable bindings using Oid class and string representation of oid (this(string oid))
+* removed unnecessary byte array allocation in MutableByte.Append(byte) method
+* removed unused MutableByte class allocation from Pdu.encode() method
+* added a check for a correct sequence type at the start of an SNMP packet in SnmpPacket.GetProtocolVersion() and SnmpPacket.decode() methods (SnmpDecodingException thrown)
+* added sequence type check when parsing global message data sequence in SnmpV3Packet.decode() method
+* removed unused versionHeaderLength variable in SnmpV3Packet.encode method
+* removed unused variable byteCount from Privacy3DES.Encrypt method
+* removed unused asnBuf variable from Counter64.decode method
+* removed unused oldOffset variable from Oid.decode method
+* removed unused oldOffset variable from Sequence.decode method
+* removed unused AgentParameter assignments from UdpTarget.AsyncResponse method
+* added sequence type check in SnmpV3Packet.GetUSM method
+* added exception XML documentation to SnmpV3Packet.GetUSM method
+* removed unused preVersionLength variable in SnmpV3Packet.encode method
+* removed unused asnBuf variable from Counter64.decode() method
+* implemented IDisposeable interface in UdpTransport class and changed UdpTransport.Close() into UdpTransport.Dispose() method
+* added IDisposeable interface to UdpTarget class. Implementation Dispose() method is inherited from the UdpTransport class
+* fixed Pdu.Reset() method request id value increment to handle value rollover to avoid integer overflow
+Thanks to bug report by Martin:
+* fixed bug in SnmpSimple request methods (Get, GetNext, GetBulk, Walk, Set) that could result in a UdpTarget.Close being called on an underfined UdpTarget class
+0.7.4
+* bug fix in Pdu.encode() that failed to add sysUpTime and trapObjectID to VbList with 0 items in SNMPv2 TRAPs/INFORMs. Thanks to Michal Narwojsz for report and fix.
+0.7.3
+* reverted to using Array.Copy from Buffer.BlockCopy to fix newly introduced bug (no performance benefit from Buffer.BlockCopy)
+0.7.2
+* in SecureAgentParameters removed _version variable since ony a single version is supported there is no need for a variable
+* added OctetString.SetRef and OctetString.OctetString(byte[], bool) to allow setting class value to parameter reference
+* replaced all calls to Array.Copy with Buffer.BlockCopy to improve speed
+* fixed a bug in OctetString.ToString() that tried to do ASCII print on hex strings
+* added OctetString.IsHex property (get only)
+0.7.1
+* changed Oid._data from private to protected
+* changed Oid.GetData() from internal to protected
+* changed OctetString._data from internal to protected
+* changed Integer32._data from internal to protected
+* removed Integer32.Integer32(ref Int32) constructor. There is no need for it
+* changed UInteger32._data from internal to protected
+* changed UInteger64._data from internal to protected
+* added Opaque.Opaque(string) constructor to match parent constructor OctetString.OctetString(string)
+* added Gauge32.Gauge32(UInt32) constructor
+* added Oid.IsNull property. Oid null is an empty Oid (shouldn't happen) or 0.0 value. This is a shortcut to check for both conditions
+* fixed lexographical compare in Oid.Compare(...) methods. Previously, longest method was always greater which is not correct
+* added Oid.CompareExact(int[]) and Oid.CompareExact(Oid) methods for exact Oid comparison (not lexographical)
+* changed Oid.Equals to use CompareExact method instead of Compare
+* fixed retry count in UdpTransport. Retry count of 0 should result in 1 request instead of 2 prior to fix
+* fixed IP address parsing in SimpleSnmp.Resolve(). Now it happens only once :)
+* added IpAddress.IsIP(string) method
+* fixed SnmpV3Packet constructors so that class ScopedPdu is never null (most of class methods assume it is not)
+Thanks to bug reports, improvements and fixes by Pavel Tatarinov:
+* fixed negative array length in Oid.GetChildIdentifiers
+* set context engine id and name in SecureAgentParameters.UpdateDiscoveryValues
+* fixed OctetString.Equals to return true if both class value and parameter are null arrays
+* removed duplicate setting of context engine id and name in UdpTarget.Request
+* added SnmpV3Packet(SecureAgentParameters) and SnmpV3Packet(SecureAgentParameters,ScopedPdu) constructors
+* added PduErrorStatus enumeration. Pdu and ScopedPdu classes continue to use Int32 for ErrorStatus to avoid dependency
+ on the enumeration that, over time, might become out of date and break class operation. Use the enumeration with a cast.
+0.7.0
+* implemented TripleDES privacy protocol
+0.6.0
+* implemented AES-192 and AES-256 privacy protocols
+0.5.3
+* changed IAuthenticationDigest.getDigestLength to IAuthenticationDigest.DigestLength
+* added HMACSHA1.Clear() to AuthenticationSHA1 class to release allocated resources prior to method return
+* added IAuthenticationDigest.CalculateHash() method (implemented in AuthenticationMD5 and AuthenticationSHA1)
+0.5.2
+* changed Pdu.Type from byte constants in SnmpConstants to PduType enum to avoid mistakes
+* changed TrapPdu.encode to use VbList.encode instead of encoding individual Vb entries in a loop
+* added TrapAgent helper class for simplified sending of Traps
+* added offset check in AsnType.ParseLength that now throws OverflowException when end of buffer is reached
+* added [Serializable] flag to all the Type classes
+* reordered operations in Null.decode so parsed ASN.1 type is checked before field length
+* removed Opaque.ToString(). Base class OctetString.ToString() and OctetString.ToHexString are adequate.
+* bugfix: Integer32.decode() BER decoding of negative numbers fixed
+* improved Integer32.encode() method
+* changed TrapPdu properties Generic, Specific and TimeStamp to return native data types (Int32 and UInt32) instead
+ of library specific Integer32 and TimeStamp class references
+* added VbCollection.Add(VbCollection) method to easily append contents of one collection to another
+* changed TrapPdu.Set(AsnType) to TrapPdu.Set(TrapPdu)
+* changed TrapPdu.Enterprise property from get/set to get only returning Oid object reference
+* changed Pdu.encode to use private variables and not properties when encoding internal values
+* removed generating a random Pdu.RequestId in SnmpV2Packet.encode because it is already done in Pdu.encode
+* changed Oid.Set(AsnType) to Oid.Set(Oid). Didn't make sense to keep AsnType parameter when only Oid type is processed
+* removed Pdu.Reset() call from Pdu.SetVbList() and replaced it with VbCollection.Clear()
+* renamed SnmpV1Packet.SnmpCommunity, SnmpV1TrapPacket.SnmpCommunity and SnmpV2Packet.SnmpCommunity property to Community
+* changed SnmpV1Packet.decode, SnmpV1TrapPacket.decode and encode, SnmpV2Packet.decode methods from using Community 
+ property to using _snmpCommunity protected variable
+* changed Oid.encode to allow encoding of 0 length Oid values
+* changed Pdu class to set NonRepeaters to zero and MaxRepetitions to 100 when type is changed to GetBulk
+* added SnmpInvalidPduTypeException when trying to access Pdu properties ErrorStatus and ErrorIndex in GetBulk Pdu Types
+0.5.1
+* bugfix: Pdu.Reset() setting RequestId value to 0 had unintended consequences. Changed to increment existing 
+          requestId by 1
+* bugfix: UInteger32.operator == StackOverflowException fixed
+* bugfix: Integer32.operator == StackOverflowException fixed
+* added greater then and less then (< and >) operators to the Oid class
+* added greater then and less then (< and >) operators to the Counter64 class
+0.5.0
+* SimpleSnmp class created with Get, GetNext, Set, GetBulk methods making it easy to use SNMP in C#
+ - first version of the class = only basic testing completed
+ - all methods are blocking. At this time async calls can only be made using UdpTarget.AsyncRequest method
+ - all network calls are made using UdpTransport class methods
+* added SnmpConstants.INFORM to Pdu and SnmpV2Packet classes for proper handling of INFORM packets
+* removed Socket.Shutdown() call from UdpTransport.Dispose() method to avoid SocketException under MONO
+* added SnmpConstants.REPORT to allowed Pdu types to access TrapSysUpTime and TrapObjectID. Needed to encode
+  RESPONSE packet for INFORMs.
+* added helper methods SnmpV2Packet.BuildInformResponse() and a static SnmpV2Packet.BuildInformResponse(SnmpV2Packet)
+ - makes it easier to create RESPONSE to INFORM packets
+ - static method takes a INFORM packet parsed into SnmpV2Packet and generates a correct response class
+ - member method calls the static method with 'this' parameter referencing itself
+* removed commented out SNMPV1, SNMPV2 and SNMPV3 static variables from SnmpConstants
+* SnmpV3Packet.Discovery() method removed setting of user name to "initial" and change it to null (0 len) value
+* Changed IAgentParameters.Version to SnmpVersion type from Int32 (associated changes in AgentParameters and 
+ SecureAgentParameters classes)
+* Renamed SnmpPacket.ProtocolVersion property to SnmpPacket.Version and changed type from Integer32 to SnmpVersion
+* Changed SnmpV3Packet.MessageId property type from Integer32 to Int32 and from get only to get/set
+* Changed SnmpV3Packet.MaxMessageSize property type from Integer32 to Int32 and from get only to get/set
+* Changed UserSecurityModel.EngineBoots prop type from Integer32 to Int32 and from get to get/set
+* Changed UserSecurityModel.EngineTime prop type from Integer32 to Int32 and from get to get/set
+* Changed inheritance of SnmpV2Packet from SnmpV1Packet to SnmpPacket for more flexibility in the future
+* Removed IDisposable interface from UdpTransport. Replaced with Close() method for direct user access to
+ socket closing and class destructor as a last resort resouce cleanup
+* Removed 3rd party code from Oid encode, decode, Parse, GetHashCode and ToString methods
+* removed 3rd party code from Integer32 encode and decode methods
+* removed 3rd party code from UInteger32 encode and decode methods
+* removed SnmpAgentException class - unused
+* removed SnmpUnmatchedRequestIdException - unused
+* removed SnmpUnmatchedMessageIdException - unused
+* removed SnmpMessageTimeWindowException - unused
+* removed SnmpInvalidSecurityModelException - unused
+* removed SnmpIndexOutOfRangeException - unused
+* removed SnmpInvalidUsernameException - unused
+* removed SnmpSecurityException - unused
+* removed debugging commands
+* cleaned up encode/decode methods in UInteger64
+* removed 3rd party code from AsnType.BuildLength and AsnType.ParseLength
+* removed unneccessary helper Integer32 variable creation in Pdu.encode (for encoding _requestId, _errorStatus and _errorIndex values)
+* moved methods GetSyntaxObject(string name) and GetSyntaxObject(byte asnType) from Pdu to SnmpConstants class
+* deleted 3rd party code function SnmpConstants.SetBytesFromInt()
+* changed VbCollection inheritance from Collection<Vb> to AsnType and implemented VarBind encode/decode as part of the class
+* removed SnmpRequestTimedOutException. Replaced with SnmpException with ErrorCode member set to RequestTimedOut value
+* changed SecureAgentParameters.ValidateIncomingPacket from return value bool to exception based error reporting. See documentation
+ for details of exceptions being thrown
+* updated TrapPdu to use VbCollection.decode instead of internally decoding VarBinds
+* added ToHexString method to OctetString
+* added SnmpV3Packet.GetUSM method to allow look-ahead into V2TRAP and INFORM packets to allow authentication and
+ unecryption of SNMPv3 packets
+* fixed bug in Integer32 encoding of positive values with most significant bit in most significant byte set to 1
+* added comparison routines to Counter64 class
+* implemented IComparable interface in Counter64 class
+* added explicit cast of Counter64 class value to UInt64
+* changed implicit cast of Integer32 to UInt32 value to explicit cast
+* added operator + and - to Integer32, UInteger32 and Counter64 classes
+* created IpAddress.Increment(uint) method
+* added IpAddress(UInt32) constructor and IpAddress.Set(UInt32) method
+* added Diff(first,second) static method to Counter32 and Counter64 classes to make calculating the difference between
+ two counter objects with counter roll-over taken into account easier
+* added Oid.Reset() method
+* fixed Pdu.Reset() method. Added reseting ErrorStatus, ErrorIndex, TrapObjectID, TrapTimeStamp and RequestId values.
+* removed Pdu.GetRequestId(). Integer32 class has a GetRandom() method that provides identical functionality.
+* fixed Pdu.Clone() to include all values in the copy
+* renamed SnmpV3Packet.Discovery to DiscoveryRequest()
+* added SnmpV3Packet.DiscoveryResponse helper. Easier way to build disovery replies required for SNMPv3 INFORM handling
+* added SnmpPacket properties: IsRequest, IsResponse, IsNotification, IsReport. Each is available in inherited classes
+ SnmpV1Packet, SnmpV2Packet, SnmpV1TrapPacket and SnmpV3Packet
+* added a null parameter check to OctetString implicit operator byte[] - bug
+* fixed a bug in SnmpV3Packet.BuildInformResponse where authentication and privacy information was not set in the response
+* fixed incorrect initialization of _community variable in AgentParameters.AgentParameters(SnmpVersion,OcetetString) - thanks PanBo
+TODO:
+ * version 3 TRAP and INFORM handling is not done
+ * build a better abstraction of transport classes to allow additional protocol implementation
+  - ITransport interface should be base for all transport classes
+  - IAddress interface should be base for all address information (for example, IP address + UDP port for IP/UDP) classes
+  - ITarget interface should be base for all target classes
