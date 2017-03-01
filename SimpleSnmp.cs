@@ -966,10 +966,10 @@ namespace SnmpSharpNet
 					val = GetBulk(new string[] { lastOid.ToString() });
 				}
 				// check that we have a result
-				if (val == null)
+				if (val == null || val.Count == 0)
 				{
 					// error of some sort happened. abort...
-					return null;
+					break;
 				}
 				foreach (KeyValuePair<Oid, AsnType> entry in val)
 				{
