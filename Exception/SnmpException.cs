@@ -17,11 +17,13 @@ using System;
 
 namespace SnmpSharpNet
 {
-	/// <summary>
-	/// SNMP generic exception. Thrown every time SNMP specific error is encountered.
-	/// </summary>
-	[Serializable]
-	public class SnmpException : Exception
+    /// <summary>
+    /// SNMP generic exception. Thrown every time SNMP specific error is encountered.
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class SnmpException : Exception
 	{
 		/// <summary>
 		/// No error

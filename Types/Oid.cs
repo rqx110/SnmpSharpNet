@@ -19,17 +19,24 @@ using System.Collections.Generic;
 using System.Text;
 namespace SnmpSharpNet
 {
-	
-	/// <summary>
-	/// SMI Object Identifier type implementation.
-	/// </summary>
+
+    /// <summary>
+    /// SMI Object Identifier type implementation.
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class Oid: AsnType, ICloneable, IComparable, IEnumerable<UInt32>
-	{
+#endif
+	public class Oid: AsnType, IComparable, IEnumerable<UInt32>
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#else
+        ,IEquatable<Oid>, IEquatable<uint[]>, IEquatable<string>
+#endif
+    {
 		/// <summary>Internal buffer</summary>
 		protected UInt32[] _data;
 
-		#region Constructors
+#region Constructors
 
 		/// <summary> Creates a default empty object identifier.
 		/// </summary>
@@ -71,9 +78,9 @@ namespace SnmpSharpNet
 			Set(value);
 		}
 
-		#endregion Constructors
+#endregion Constructors
 
-		#region Set members
+#region Set members
 
 		/// <summary>
 		/// Set Oid value from integer array. If integer array is null or length == 0, internal buffer is set to null.
@@ -148,7 +155,7 @@ namespace SnmpSharpNet
 			}
 		}
 
-		#endregion Set members
+#endregion Set members
 
 		/// <summary> Gets the number of object identifiers
 		/// in the object.
@@ -295,7 +302,7 @@ namespace SnmpSharpNet
 		}
 		
 
-		#region Comparison methods
+#region Comparison methods
 
 		/// <summary>Compare Oid value with array of UInt32 integers</summary>
 		/// <param name="ids">Array of integers</param>
@@ -423,6 +430,7 @@ namespace SnmpSharpNet
 				return -1;
 			return Compare(cmp.GetData());
 		}
+#if !NETCOREAPP11 && !NETSTANDARD15
 
 		/// <summary> Test for equality. Returns true if 'o' is an instance of an Oid and is equal to self.</summary>
 		/// <param name="obj">The object to be tested for equality.</param>
@@ -447,18 +455,103 @@ namespace SnmpSharpNet
 			}
 			return false;
 		}
-
-		/// <summary>Compares the passed object identifier against self
-		/// to determine if self is the root of the passed object.
-		/// If the passed object is in the same root tree as self
-		/// then a true value is returned. Otherwise a false value
-		/// is returned from the object.
+        /// <summary> Converts the object identifier to a dotted decimal
+		/// string representation.
 		/// </summary>
-		/// <param name="leaf">The object to be tested
-		/// </param>
-		/// <returns> True if leaf is in the tree.
+		/// <returns> Returns the dotted decimal object id string.
 		/// </returns>
-		public virtual bool IsRootOf(Oid leaf)
+		public override System.String ToString()
+        {
+            StringBuilder buf = new StringBuilder();
+            if (_data == null)
+            {
+                buf.Append("0.0");
+            }
+            else
+            {
+                for (int x = 0; x < _data.Length; x++)
+                {
+                    if (x > 0)
+                    {
+                        buf.Append('.');
+                    }
+                    buf.Append(_data[x].ToString());
+                }
+            }
+            return buf.ToString();
+        }
+
+        /// <summary>Hash value for OID value
+        /// </summary>
+        /// <returns> The hash code for the object.
+        /// </returns>
+        public override int GetHashCode()
+        {
+            int hash = 0;
+
+            if (_data == null)
+            {
+                return hash;
+            }
+
+            for (int i = 0; i < _data.Length; i++)
+            {
+                hash = hash ^ (_data[i] > Int32.MaxValue ? Int32.MaxValue : (int)_data[i]);
+            }
+            return hash;
+        }
+#else
+        /// <summary> Test for equality. Returns true if 'o' is an instance of an Oid and is equal to self.</summary>
+        /// <param name="obj">The object to be tested for equality.</param>
+        /// <returns> True if the object is an Oid and is equal to self. False otherwise.</returns>
+        public bool Equals(Oid obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            return (CompareExact(((Oid) obj)._data) == 0);
+        }
+
+        /// <summary> Test for equality. Returns true if 'o' is an instance of an Oid and is equal to self.</summary>
+        /// <param name="obj">The object to be tested for equality.</param>
+        /// <returns> True if the object is an Oid and is equal to self. False otherwise.</returns>
+        public bool Equals(string obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            return (CompareExact(Parse((System.String) obj)) == 0);
+        }
+
+        /// <summary> Test for equality. Returns true if 'o' is an instance of an Oid and is equal to self.</summary>
+        /// <param name="obj">The object to be tested for equality.</param>
+        /// <returns> True if the object is an Oid and is equal to self. False otherwise.</returns>
+        public bool Equals(uint[] obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+
+            return (CompareExact(obj) == 0);
+
+        }
+#endif
+        /// <summary>Compares the passed object identifier against self
+        /// to determine if self is the root of the passed object.
+        /// If the passed object is in the same root tree as self
+        /// then a true value is returned. Otherwise a false value
+        /// is returned from the object.
+        /// </summary>
+        /// <param name="leaf">The object to be tested
+        /// </param>
+        /// <returns> True if leaf is in the tree.
+        /// </returns>
+        public virtual bool IsRootOf(Oid leaf)
 		{
 			return (Compare(leaf._data, _data == null ? 0 : _data.Length) == 0);
 		}
@@ -476,7 +569,7 @@ namespace SnmpSharpNet
 				return CompareExact((Oid)obj);
 			return 1;
 		}
-		#endregion Comparison methods
+#endregion Comparison methods
 
 		/// <summary>
 		/// Return internal integer array. This is required by static members of the class and other methods in
@@ -624,7 +717,7 @@ namespace SnmpSharpNet
 			return r;
 		}
 
-		#region Operators
+#region Operators
 
 		/// <summary>
 		/// Add Oid class value and oid values in the integer array into a new class instance.
@@ -795,53 +888,9 @@ namespace SnmpSharpNet
 			return false;
 		}
 
-		#endregion Operators
+#endregion Operators
 
-		/// <summary> Converts the object identifier to a dotted decimal
-		/// string representation.
-		/// </summary>
-		/// <returns> Returns the dotted decimal object id string.
-		/// </returns>
-		public override System.String ToString()
-		{
-			StringBuilder buf = new StringBuilder();
-			if (_data == null)
-			{
-				buf.Append("0.0");
-			}
-			else
-			{
-				for (int x = 0; x < _data.Length; x++)
-				{
-					if (x > 0)
-					{
-						buf.Append('.');
-					}
-					buf.Append(_data[x].ToString());
-				}
-			}
-			return buf.ToString();
-		}
 		
-		/// <summary>Hash value for OID value
-		/// </summary>
-		/// <returns> The hash code for the object.
-		/// </returns>
-		public override int GetHashCode()
-		{
-			int hash = 0;
-
-			if (_data == null)
-			{
-				return hash;
-			}
-
-			for (int i = 0; i < _data.Length; i++)
-			{
-				hash = hash ^ (_data[i] > Int32.MaxValue ? Int32.MaxValue : (int)_data[i]);
-			}
-			return hash;
-		}
 
 		/// <summary>Duplicate current object.</summary>
 		/// <returns> Returns a new Oid copy of self cast as Object.</returns>
@@ -850,7 +899,7 @@ namespace SnmpSharpNet
 			return new Oid(this);
 		}
 
-		#region Encode & Decode
+#region Encode & Decode
 
 		/// <summary>
 		/// Encodes ASN.1 object identifier and append it to the end of the passed buffer.
@@ -1009,7 +1058,7 @@ namespace SnmpSharpNet
 
 			return offset;
 		}
-		#endregion Encode & Decode
+#endregion Encode & Decode
 
 		/// <summary>Parse string formatted oid value into an array of integers</summary>
 		/// <param name="oidStr">string formatted oid</param>

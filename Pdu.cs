@@ -52,10 +52,15 @@ namespace SnmpSharpNet {
 	/// 
 	/// MaxRepeaters tells the agent how many variable bindings to return in a single Pdu for each requested Oid.
 	/// </remarks>
-	public class Pdu : AsnType, ICloneable, IEnumerable<Vb>
-	{
+	public class Pdu : AsnType, IEnumerable<Vb>
+#if !NETCOREAPP11 && !NETSTANDARD15
+, ICloneable
+#else
+        ,IEquatable<Pdu>,IEquatable<Integer32>
+#endif
+    {
 
-		#region Internal variables
+#region Internal variables
 
 		/// <summary>
 		/// Variable binding collection
@@ -98,7 +103,7 @@ namespace SnmpSharpNet {
 		/// </remarks>
 		protected Oid _trapObjectID;
 
-		#endregion Internal variables
+#endregion Internal variables
 
 		/// <summary>
 		/// Constructor.
@@ -545,7 +550,7 @@ namespace SnmpSharpNet {
 			}
 		}
 
-		#region Encode & Decode methods
+#region Encode & Decode methods
 
 		/// <summary>
 		/// Encode Pdu class to BER byte buffer
@@ -675,9 +680,10 @@ namespace SnmpSharpNet {
 
 			return offset;
 		}
-		#endregion
+        #endregion
 
-		#region Overrides
+        #region Overrides
+#if !NETCOREAPP11 && !NETSTANDARD15
 
 		/// <summary>
 		/// Return string dump of the Pdu class.
@@ -729,11 +735,116 @@ namespace SnmpSharpNet {
 			}
 			return str.ToString();
 		}
-		/// <summary>
-		/// Clone this object
+        /// <summary>
+		/// Check class equality with argument.
+		/// 
+		/// Accepted argument types are:
+		/// * Integer32 - compared against the request id
+		/// * Pdu - compared against PduType, request id and contents of VarBind list
 		/// </summary>
-		/// <returns>Copy of this object cast as type System.Object</returns>
-		public override Object Clone()
+		/// <param name="obj">Integer32 or Pdu to compare</param>
+		/// <returns>True if equal, otherwise false</returns>
+		public override bool Equals(object obj)
+        {
+            if (obj == null)
+                return false;
+            if (obj is Integer32)
+            {
+                if (((Integer32)obj) == _requestId)
+                    return true;
+                return false;
+            }
+            else if (obj is Pdu)
+            {
+                Pdu p = (Pdu)obj;
+                if (p.Type != this.Type)
+                    return false;
+                if (p.RequestId != this.RequestId)
+                    return false;
+                if (p.VbCount != this.VbCount)
+                    return false;
+                foreach (Vb v in VbList)
+                {
+                    if (!p.VbList.ContainsOid(v.Oid))
+                        return false;
+                }
+                foreach (Vb v in p.VbList)
+                {
+                    if (!VbList.ContainsOid(v.Oid))
+                        return false;
+                }
+                return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns hash code representing class value.
+        /// </summary>
+        /// <returns>Class value hash code</returns>
+        public override int GetHashCode()
+        {
+            return (byte)Type | RequestId;
+        }
+#else
+        /// <summary>
+        /// Check class equality with argument.
+        /// 
+        /// Accepted argument types are:
+        /// * Integer32 - compared against the request id
+        /// * Pdu - compared against PduType, request id and contents of VarBind list
+        /// </summary>
+        /// <param name="obj">Integer32 or Pdu to compare</param>
+        /// <returns>True if equal, otherwise false</returns>
+        public bool Equals(Integer32 obj)
+        {
+            if (obj == null)
+                return false;
+
+            if (((Integer32) obj) == _requestId)
+                return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Check class equality with argument.
+        /// 
+        /// Accepted argument types are:
+        /// * Integer32 - compared against the request id
+        /// * Pdu - compared against PduType, request id and contents of VarBind list
+        /// </summary>
+        /// <param name="obj">Integer32 or Pdu to compare</param>
+        /// <returns>True if equal, otherwise false</returns>
+        public bool Equals(Pdu obj)
+        {
+            if (obj == null)
+                return false;
+
+            Pdu p = (Pdu) obj;
+            if (p.Type != this.Type)
+                return false;
+            if (p.RequestId != this.RequestId)
+                return false;
+            if (p.VbCount != this.VbCount)
+                return false;
+            foreach (Vb v in VbList)
+            {
+                if (!p.VbList.ContainsOid(v.Oid))
+                    return false;
+            }
+            foreach (Vb v in p.VbList)
+            {
+                if (!VbList.ContainsOid(v.Oid))
+                    return false;
+            }
+            return true;
+        }
+#endif
+        /// <summary>
+        /// Clone this object
+        /// </summary>
+        /// <returns>Copy of this object cast as type System.Object</returns>
+        public override Object Clone()
 		{
 			Pdu p = new Pdu(_vbs, Type, _requestId);
 			if (this.Type == PduType.GetBulk)
@@ -753,61 +864,10 @@ namespace SnmpSharpNet {
 			}
 			return p;
 		}
-		/// <summary>
-		/// Check class equality with argument.
-		/// 
-		/// Accepted argument types are:
-		/// * Integer32 - compared against the request id
-		/// * Pdu - compared against PduType, request id and contents of VarBind list
-		/// </summary>
-		/// <param name="obj">Integer32 or Pdu to compare</param>
-		/// <returns>True if equal, otherwise false</returns>
-		public override bool Equals(object obj)
-		{
-			if (obj == null)
-				return false;
-			if( obj is Integer32 )
-			{
-				if( ((Integer32)obj) == _requestId )
-					return true;
-				return false;
-			}
-			else if( obj is Pdu )
-			{
-				Pdu p = (Pdu)obj;
-				if (p.Type != this.Type)
-					return false;
-				if (p.RequestId != this.RequestId)
-					return false;
-				if (p.VbCount != this.VbCount)
-					return false;
-				foreach (Vb v in VbList)
-				{
-					if (!p.VbList.ContainsOid(v.Oid))
-						return false;
-				}
-				foreach (Vb v in p.VbList)
-				{
-					if (!VbList.ContainsOid(v.Oid))
-						return false;
-				}
-				return true;
-			}
-			return false;
-		}
+		
+#endregion // Overrides
 
-		/// <summary>
-		/// Returns hash code representing class value.
-		/// </summary>
-		/// <returns>Class value hash code</returns>
-		public override int GetHashCode()
-		{
-			return (byte)Type | RequestId;
-		}
-
-		#endregion // Overrides
-
-		#region Quick access methods
+#region Quick access methods
 
 		/// <summary>
 		/// Indexed access to VarBind collection of the Pdu.
@@ -878,6 +938,6 @@ namespace SnmpSharpNet {
 			return ((System.Collections.IEnumerable)_vbs).GetEnumerator();
 		}
 
-		#endregion
+#endregion
 	}
 }

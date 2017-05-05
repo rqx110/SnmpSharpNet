@@ -16,27 +16,32 @@
 using System;
 namespace SnmpSharpNet
 {
-	
-	
-	/// <summary>SNMPv2 NoSuchObject error</summary>
-	/// <remarks>
-	/// NoSuchObject is returned by the agent in response to a SNMP version 2 request 
-	/// when requested object does not exist in its MIB.
-	/// This value is returned as a <seealso cref="Vb.Value"/> with data of length 0
-	/// 
-	/// For example:
-	/// <code lang="cs">
-	/// // [... prepare for a get operation ...]
-	/// Pdu response = target.Request(outpdu, params);
-	/// foreach(Vb vb in response.VbList) {
-	///		if( vb.Value is NoSuchObject ) {
-	///			return "Requested MIB variable does not exist on the agent.";
-	///		}
-	///	}
-	/// </code>
-	/// </remarks>
+
+
+    /// <summary>SNMPv2 NoSuchObject error</summary>
+    /// <remarks>
+    /// NoSuchObject is returned by the agent in response to a SNMP version 2 request 
+    /// when requested object does not exist in its MIB.
+    /// This value is returned as a <seealso cref="Vb.Value"/> with data of length 0
+    /// 
+    /// For example:
+    /// <code lang="cs">
+    /// // [... prepare for a get operation ...]
+    /// Pdu response = target.Request(outpdu, params);
+    /// foreach(Vb vb in response.VbList) {
+    ///		if( vb.Value is NoSuchObject ) {
+    ///			return "Requested MIB variable does not exist on the agent.";
+    ///		}
+    ///	}
+    /// </code>
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class NoSuchObject:V2Error, ICloneable
+#endif
+    public class NoSuchObject:V2Error
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
 	{		
 		
 		/// <summary>Constructor.</summary>
@@ -89,12 +94,14 @@ namespace SnmpSharpNet
 		{
 			BuildHeader(buffer, Type, 0);
 		}
-		
+#if !NETCOREAPP11 && !NETSTANDARD15
+
 		/// <summary> Returns the string representation of the object.</summary>
 		/// <returns>String representation of the class</returns>
 		public override System.String ToString()
 		{
 			return "SNMP No-Such-Object";
 		}
+#endif
 	}
 }

@@ -19,66 +19,72 @@ using System.Net;
 
 namespace SnmpSharpNet
 {
-	
-	/// <summary>ASN.1 IPAddress type implementation</summary>
-	/// <remarks>
-	/// You can assign the IP address value to the class using:
-	/// 
-	/// A string value representing the IP address in dotted decimal notation:
-	/// <code>
-	/// IpAddress ipaddr = new IpAddress("10.1.1.1");
-	/// </code>
-	/// 
-	/// A string value representing the hosts domain name:
-	/// <code>
-	/// IpAddress ipaddr = new IpAddress("this.ismyhost.com");
-	/// </code>
-	/// 
-	/// Another IpAddress class:
-	/// <code>
-	/// IpAddress first = new IpAddress("10.1.1.2");
-	/// IpAddress second = new IpAddress(first);
-	/// </code>
-	/// 
-	/// Or from the System.Net.IPAddress:
-	/// <code>
-	/// IPAddress addr = IPAddress.Any;
-	/// IpAddress ipaddr = new IpAddress(addr);
-	/// </code>
-	/// 
-	/// You can check if the IpAddress class contains a valid value by calling:
-	/// <code>
-	/// IpAddress ipaddr = new IpAddress("10.1.1.3");
-	/// if( ! ipaddr.Valid ) {
-	///	  Console.WriteLine("Invalid IP Address value.");
-	///	  return;
-	///	}
-	/// </code>
-	/// 
-	/// There are other operations you can perform with the IpAddress class. For example, let say
-	/// you retrieved an IP address and subnet mask from an SNMP agent and wish to scan the subnet for
-	/// other hosts that can be managed. You could do this:
-	/// IpAddress host = SomehowRetrieveIPAddress();
-	/// IpAddress mask = SomehowRetrieveSubnetMask();
-	/// IpAddress subnetAddr = host.GetSubnetAddress(mask);
-	/// IpAddress broadcastAddr = host.GetBroadcastAddress(mask);
-	/// IpAddress host = (IpAddress)subnetAddr.Clone();
-	/// while( host.CompareTo(broadcastAddr) != 0 ) {
-	///   host = host.Increment(1); // increment IP address by one
-	///   if( ! host.Equals(broadcastAddr) )
-	///     ScanHostInWhateverWayYouLike(host);
-	/// }
-	/// 
-	/// Note: internally, IpAddress class holds the value in a byte array, network ordered format.
-	/// </remarks>
+
+    /// <summary>ASN.1 IPAddress type implementation</summary>
+    /// <remarks>
+    /// You can assign the IP address value to the class using:
+    /// 
+    /// A string value representing the IP address in dotted decimal notation:
+    /// <code>
+    /// IpAddress ipaddr = new IpAddress("10.1.1.1");
+    /// </code>
+    /// 
+    /// A string value representing the hosts domain name:
+    /// <code>
+    /// IpAddress ipaddr = new IpAddress("this.ismyhost.com");
+    /// </code>
+    /// 
+    /// Another IpAddress class:
+    /// <code>
+    /// IpAddress first = new IpAddress("10.1.1.2");
+    /// IpAddress second = new IpAddress(first);
+    /// </code>
+    /// 
+    /// Or from the System.Net.IPAddress:
+    /// <code>
+    /// IPAddress addr = IPAddress.Any;
+    /// IpAddress ipaddr = new IpAddress(addr);
+    /// </code>
+    /// 
+    /// You can check if the IpAddress class contains a valid value by calling:
+    /// <code>
+    /// IpAddress ipaddr = new IpAddress("10.1.1.3");
+    /// if( ! ipaddr.Valid ) {
+    ///	  Console.WriteLine("Invalid IP Address value.");
+    ///	  return;
+    ///	}
+    /// </code>
+    /// 
+    /// There are other operations you can perform with the IpAddress class. For example, let say
+    /// you retrieved an IP address and subnet mask from an SNMP agent and wish to scan the subnet for
+    /// other hosts that can be managed. You could do this:
+    /// IpAddress host = SomehowRetrieveIPAddress();
+    /// IpAddress mask = SomehowRetrieveSubnetMask();
+    /// IpAddress subnetAddr = host.GetSubnetAddress(mask);
+    /// IpAddress broadcastAddr = host.GetBroadcastAddress(mask);
+    /// IpAddress host = (IpAddress)subnetAddr.Clone();
+    /// while( host.CompareTo(broadcastAddr) != 0 ) {
+    ///   host = host.Increment(1); // increment IP address by one
+    ///   if( ! host.Equals(broadcastAddr) )
+    ///     ScanHostInWhateverWayYouLike(host);
+    /// }
+    /// 
+    /// Note: internally, IpAddress class holds the value in a byte array, network ordered format.
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class IpAddress : OctetString, IComparable, ICloneable
-	{
-		/// <summary> Constructs a default object with a 
-		/// length of zero. See the super class
-		/// constructor for more details.
-		/// </summary>
-		public IpAddress()
+#endif
+	public class IpAddress : OctetString, IComparable
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#else
+#endif
+    {
+    /// <summary> Constructs a default object with a 
+    /// length of zero. See the super class
+    /// constructor for more details.
+    /// </summary>
+    public IpAddress()
 		{
 			_asnType = SnmpConstants.SMI_IPADDRESS;
 			_data = new byte[]{0, 0, 0, 0};
@@ -178,9 +184,15 @@ namespace SnmpSharpNet
 			{
 				try
 				{
-					IPHostEntry entry = Dns.GetHostEntry(value);
-					// have to loop through all returned addresses to make sure we pick IPv4 address
-					foreach (IPAddress addr in entry.AddressList)
+#if !NETCOREAPP11 && !NETSTANDARD15
+                    IPHostEntry entry = Dns.GetHostEntry(value);
+#else
+                    var t = Dns.GetHostEntryAsync(value);
+                    t.Wait();
+                    IPHostEntry entry = t.Result;
+#endif
+                    // have to loop through all returned addresses to make sure we pick IPv4 address
+                    foreach (IPAddress addr in entry.AddressList)
 					{
 						if (addr.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
 						{
@@ -234,22 +246,7 @@ namespace SnmpSharpNet
 			return new IPAddress(ipaddr.GetData());
 		}
 		
-		/// <summary> Returns the application string as a dotted decimal represented IP address.</summary>
-		/// <returns>String representation of the class value.</returns>
-		public override System.String ToString()
-		{
-			if (_data == null)
-				return "";
-			byte[] data = _data;
-			
-			System.Text.StringBuilder buf = new System.Text.StringBuilder();
-			buf.Append((int) (data[0] < 0?256 + data[0]:data[0])).Append('.');
-			buf.Append((int) (data[1] < 0?256 + data[1]:data[1])).Append('.');
-			buf.Append((int) (data[2] < 0?256 + data[2]:data[2])).Append('.');
-			buf.Append((int) (data[3] < 0?256 + data[3]:data[3]));
-			
-			return buf.ToString();
-		}
+
 
 		/// <summary>
 		/// Compare value against IPAddress, byte array, UInt32, IpAddress of OctetString class value.
@@ -309,12 +306,30 @@ namespace SnmpSharpNet
 				return 0;
 			}
 		}
-		/// <summary>
-		/// Compare 2 IpAddress objects.
-		/// </summary>
-		/// <param name="obj"><see cref="IpAddress"/> object to compare against</param>
-		/// <returns>True if objects are the same, otherwise false.</returns>
-		public override bool Equals(object obj)
+#if !NETCOREAPP11 && !NETSTANDARD15
+
+        /// <summary> Returns the application string as a dotted decimal represented IP address.</summary>
+        /// <returns>String representation of the class value.</returns>
+        public override System.String ToString()
+        {
+            if (_data == null)
+                return "";
+            byte[] data = _data;
+
+            System.Text.StringBuilder buf = new System.Text.StringBuilder();
+            buf.Append((int)(data[0] < 0 ? 256 + data[0] : data[0])).Append('.');
+            buf.Append((int)(data[1] < 0 ? 256 + data[1] : data[1])).Append('.');
+            buf.Append((int)(data[2] < 0 ? 256 + data[2] : data[2])).Append('.');
+            buf.Append((int)(data[3] < 0 ? 256 + data[3] : data[3]));
+
+            return buf.ToString();
+        }
+        /// <summary>
+        /// Compare 2 IpAddress objects.
+        /// </summary>
+        /// <param name="obj"><see cref="IpAddress"/> object to compare against</param>
+        /// <returns>True if objects are the same, otherwise false.</returns>
+        public override bool Equals(object obj)
 		{
 			if (obj == null)
 				return false;
@@ -331,10 +346,23 @@ namespace SnmpSharpNet
 			int hash = Convert.ToInt32(_data[0]) + Convert.ToInt32(_data[1]) + Convert.ToInt32(_data[2]) + Convert.ToInt32(_data[3]);
 			return hash;
 		}
-		/// <summary>
-		/// Returns true if object contains a valid IP address value.
-		/// </summary>
-		public bool Valid
+#else
+        /// <summary>
+        /// Compare 2 IpAddress objects.
+        /// </summary>
+        /// <param name="obj"><see cref="IpAddress"/> object to compare against</param>
+        /// <returns>True if objects are the same, otherwise false.</returns>
+        public bool Equals(IpAddress obj)
+        {
+            if (obj == null)
+                return false;
+            return ((this.CompareTo(obj) == 0) ? true : false);
+        }
+#endif
+        /// <summary>
+        /// Returns true if object contains a valid IP address value.
+        /// </summary>
+        public bool Valid
 		{
 			get
 			{
@@ -367,7 +395,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 
-		#region Helper functions
+#region Helper functions
 
 		/// <summary>
 		/// Class A IP address
@@ -746,6 +774,6 @@ namespace SnmpSharpNet
 			return true;
 		}
 
-		#endregion Helper functions
+#endregion Helper functions
 	}
 }

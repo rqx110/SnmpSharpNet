@@ -13,14 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with SNMP#NET.  If not, see <http://www.gnu.org/licenses/>.
 // 
+#if !NETCOREAPP11 && !NETSTANDARD15
 using System;
 using System.Security.Cryptography;
 using System.Net;
 
 namespace SnmpSharpNet
 {
-	/// <summary>AES privacy protocol implementation class.</summary>
-	public class PrivacyAES : IPrivacyProtocol
+
+    /// <summary>AES privacy protocol implementation class.</summary>
+    public class PrivacyAES : IPrivacyProtocol
 	{
 		/// <summary>
 		/// Salt value
@@ -319,3 +321,4 @@ namespace SnmpSharpNet
 		}
 	}
 }
+#endif

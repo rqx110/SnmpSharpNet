@@ -22,8 +22,11 @@ namespace SnmpSharpNet
 	/// Trap PDU for SNMP version 1 is a PDU with a unique layout requiring a dedicated class. SNMP versions
 	/// 2 and 3 use standard PDU type for V2TRAP notifications.
 	/// </remarks>
-	public class TrapPdu: AsnType, ICloneable
-	{
+	public class TrapPdu: AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		#region Internal variables
 
 		/// <summary>Trap enterprise Oid</summary>

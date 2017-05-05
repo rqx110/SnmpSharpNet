@@ -16,11 +16,16 @@
 using System;
 namespace SnmpSharpNet
 {
-	/// <summary>ASN.1 Gauge32 value class.
-	/// </summary>
-	[Serializable]
-	public class Gauge32:UInteger32, ICloneable
-	{
+    /// <summary>ASN.1 Gauge32 value class.
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class Gauge32: UInteger32
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		/// <summary> Constructs the default counter object.
 		/// The initial value is defined
 		/// by the super class default constructor

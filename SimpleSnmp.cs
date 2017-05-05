@@ -1104,9 +1104,15 @@ namespace SnmpSharpNet
 				IPHostEntry he = null;
 				try
 				{
+#if !NETCOREAPP11 && !NETSTANDARD15
 					he = Dns.GetHostEntry(_peerName);
+#else
+                    var t = Dns.GetHostEntryAsync(_peerName);
+				    t.Wait();
+				    he = t.Result;
+#endif
 				}
-				catch(Exception ex)
+                catch (Exception ex)
 				{
 					if( ! _suppressExceptions )
 					{
@@ -1149,6 +1155,6 @@ namespace SnmpSharpNet
 		}
 
 
-		#endregion
+#endregion
 	}
 }

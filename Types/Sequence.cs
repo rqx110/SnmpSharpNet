@@ -4,12 +4,17 @@ using System.Text;
 
 namespace SnmpSharpNet
 {
-	/// <summary>
-	/// Represents SNMP sequence
-	/// </summary>
-	[Serializable]
-	public class Sequence : AsnType, ICloneable
-	{
+    /// <summary>
+    /// Represents SNMP sequence
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class Sequence : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		/// <summary>
 		/// data buffer
 		/// </summary>

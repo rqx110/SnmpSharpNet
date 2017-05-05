@@ -17,14 +17,19 @@ using System;
 using System.Globalization;
 namespace SnmpSharpNet
 {
-	
-	/// <summary>EthernetAddress class encapsulates a 6 byte OctetString
-	/// representing an Ethernet MAC address.
-	/// </summary>
-	/// <remarks>THis class doesn't not represent a distinct ASN.1 data type. It is a helper
-	/// class to allow users to perform MAC address specific operations on OctetString values.</remarks>
+
+    /// <summary>EthernetAddress class encapsulates a 6 byte OctetString
+    /// representing an Ethernet MAC address.
+    /// </summary>
+    /// <remarks>THis class doesn't not represent a distinct ASN.1 data type. It is a helper
+    /// class to allow users to perform MAC address specific operations on OctetString values.</remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class EthernetAddress : OctetString, ICloneable
+#endif
+	public class EthernetAddress : OctetString
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
 	{
 		/// <summary>Constructor. Initialize the class to 0000.0000.0000
 		/// </summary>
@@ -93,7 +98,7 @@ namespace SnmpSharpNet
 		{
 			if( value == null || value.Length <= 0 )
 				throw new ArgumentException("Invalid argument. String is empty.");
-			string workString = (string)value.Clone();
+		    string workString = new string(value.ToCharArray());
 			for (int cnt = 0; cnt < value.Length; cnt++)
 			{
 				if (!Char.IsNumber(workString[cnt]) && Char.ToUpper(workString[cnt]) != 'A' &&
@@ -119,7 +124,7 @@ namespace SnmpSharpNet
 				pos += 2;
 			}
 		}
-		
+#if !NETCOREAPP11 && !NETSTANDARD15
 		/// <summary>
 		/// Return Ethernet MAC address as a string formatted as: xxxx.xxxx.xxxx
 		/// </summary>
@@ -128,5 +133,6 @@ namespace SnmpSharpNet
 		{
 			return String.Format(CultureInfo.CurrentCulture,"{0:x2}{1:x2}.{2:x2}{3:x2}.{4:x2}{5:x2}", _data[0], _data[1], _data[2], _data[3], _data[4], _data[5]);
 		}
+#endif
 	}
 }

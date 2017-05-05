@@ -17,19 +17,26 @@ using System;
 using System.Globalization;
 namespace SnmpSharpNet
 {
-	/// <summary>ASN.1 Counter64 value implementation.</summary>
-	/// <remarks>
-	/// Counter64 value is unsigned 64-bit integer value that is incremented by the agent
-	/// until maximum value is reached. When maximum value is reached, Counter64 value will
-	/// roll over to 0.
-	/// </remarks>
-	[Serializable]
-	public class Counter64 : AsnType, IComparable<UInt64>, IComparable<Counter64>, ICloneable
-	{
-		/// <summary>
-		/// Internal 64-bit unsigned integer value.
-		/// </summary>
-		protected UInt64 _value;
+    /// <summary>ASN.1 Counter64 value implementation.</summary>
+    /// <remarks>
+    /// Counter64 value is unsigned 64-bit integer value that is incremented by the agent
+    /// until maximum value is reached. When maximum value is reached, Counter64 value will
+    /// roll over to 0.
+    /// </remarks>
+#if !NETSTANDARD15 && !NETCOREAPP11
+    [Serializable]
+#endif
+	public class Counter64 : AsnType, IComparable<UInt64>, IComparable<Counter64>
+#if !NETSTANDARD15 && !NETCOREAPP11
+,ICloneable
+#else
+        ,IEquatable<Counter64>, IEquatable<UInt64>
+#endif
+    {
+        /// <summary>
+        /// Internal 64-bit unsigned integer value.
+        /// </summary>
+        protected UInt64 _value;
 		
 		
 		/// <summary>
@@ -137,16 +144,15 @@ namespace SnmpSharpNet
 		{
 			return new Counter64(this);
 		}
-
-		/// <summary>
-		/// Return class value hash code
-		/// </summary>
-		/// <returns>Int32 hash of the class stored value</returns>
-		public override int GetHashCode()
+#if !NETCOREAPP11 && !NETSTANDARD15
+        /// <summary>
+        /// Return class value hash code
+        /// </summary>
+        /// <returns>Int32 hash of the class stored value</returns>
+        public override int GetHashCode()
 		{
 			return _value.GetHashCode();
 		}
-
 		/// <summary>
 		/// Compare class value against the object argument. Supported argument types are 
 		/// <see cref="Counter64"/> and UInt64.
@@ -172,18 +178,44 @@ namespace SnmpSharpNet
 		{
 			return Value.ToString(CultureInfo.CurrentCulture);
 		}
+#else
+        /// <summary>
+        /// Compare class value against the object argument. Supported argument types are 
+        /// <see cref="Counter64"/> and UInt64.
+        /// </summary>
+        /// <param name="obj">Object to compare values with</param>
+        /// <returns>True if object value is the same as this class, otherwise false.</returns>
+        public bool Equals(Counter64 obj)
+        {
+            if (obj == null)
+                return false;
+            if (obj is Counter64)
+                return _value.Equals(((Counter64)obj).Value);
+            return false;
+        }
+        /// <summary>
+        /// Compare class value against the object argument. Supported argument types are 
+        /// <see cref="Counter64"/> and UInt64.
+        /// </summary>
+        /// <param name="obj">Object to compare values with</param>
+        /// <returns>True if object value is the same as this class, otherwise false.</returns>
+        public bool Equals(UInt64 obj)
+        {
+            return _value.Equals((UInt64) obj);
+        }
+#endif
 
-		/// <summary>
-		/// Implicit casting of Counter64 value as UInt64 value
-		/// </summary>
-		/// <param name="value">Counter64 class whose value is cast as UInt64 value</param>
-		/// <returns>UInt64 value of the Counter64 class.</returns>
-		public static implicit operator UInt64(Counter64 value)
+        /// <summary>
+        /// Implicit casting of Counter64 value as UInt64 value
+        /// </summary>
+        /// <param name="value">Counter64 class whose value is cast as UInt64 value</param>
+        /// <returns>UInt64 value of the Counter64 class.</returns>
+        public static implicit operator UInt64(Counter64 value)
 		{
 			return value.Value;
 		}
 
-		#region Encode & Decode methods
+#region Encode & Decode methods
 
 		/// <summary>BER encode class value</summary>
 		/// <param name="buffer">MutableByte to append BER encoded value to.
@@ -246,7 +278,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 
-		#endregion
+#endregion
 
 
 		/// <summary>

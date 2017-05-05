@@ -49,8 +49,12 @@ namespace SnmpSharpNet
 			{
 				result[i] = hash[i];
 			}
+#if !NETCOREAPP11 && !NETSTANDARD15
 			sha.Clear(); // release resources
-			return result;
+#else
+            sha.Dispose();
+#endif
+            return result;
 		}
 		/// <summary>
 		/// Authenticate packet and return authentication parameters value to the caller
@@ -69,8 +73,12 @@ namespace SnmpSharpNet
 			{
 				result[i] = hash[i];
 			}
+#if !NETCOREAPP11 && !NETSTANDARD15
 			sha.Clear(); // release resources
-			return result;
+#else
+            sha.Dispose();
+#endif
+            return result;
 		}
 		/// <summary>
 		/// Verifies correct SHA-1 authentication of the frame. Prior to calling this method, you have to extract authentication
@@ -88,8 +96,12 @@ namespace SnmpSharpNet
 			HMACSHA1 sha = new HMACSHA1(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			MutableByte myhash = new MutableByte(hash, 12);
+#if !NETCOREAPP11 && !NETSTANDARD15
 			sha.Clear(); // release resources
-			if (myhash.Equals(authenticationParameters))
+#else
+            sha.Dispose();
+#endif
+            if (myhash.Equals(authenticationParameters))
 			{
 				return true;
 			}
@@ -107,8 +119,12 @@ namespace SnmpSharpNet
 			HMACSHA1 sha = new HMACSHA1(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			MutableByte myhash = new MutableByte(hash, 12);
+#if !NETCOREAPP11 && !NETSTANDARD15
 			sha.Clear(); // release resources
-			if (myhash.Equals(authenticationParameters))
+#else
+            sha.Dispose();
+#endif
+            if (myhash.Equals(authenticationParameters))
 			{
 				return true;
 			}
@@ -129,10 +145,14 @@ namespace SnmpSharpNet
 
 			int password_index = 0;
 			int count = 0;
-			SHA1 sha = new SHA1CryptoServiceProvider();
+#if !NETCOREAPP11 && !NETSTANDARD15
+            SHA1 sha = new SHA1CryptoServiceProvider();
+#else
+            SHA1 sha = SHA1.Create();
+#endif
 
-			/* Use while loop until we've done 1 Megabyte */
-			byte[] sourceBuffer = new byte[1048576];
+            /* Use while loop until we've done 1 Megabyte */
+            byte[] sourceBuffer = new byte[1048576];
 			byte[] buf = new byte[64];
 			while (count < 1048576)
 			{
@@ -153,8 +173,12 @@ namespace SnmpSharpNet
 			tmpbuf.Append(engineID);
 			tmpbuf.Append(digest);
 			byte[] res = sha.ComputeHash(tmpbuf);
-			sha.Clear(); // release resources
-			return res;
+#if !NETCOREAPP11 && !NETSTANDARD15
+            sha.Clear();
+#else
+            sha.Dispose();
+#endif
+            return res;
 		}
 
 		/// <summary>
@@ -181,10 +205,18 @@ namespace SnmpSharpNet
 		/// <returns>Hash value</returns>
 		public byte[] ComputeHash(byte[] data, int offset, int count)
 		{
-			SHA1 sha = new SHA1CryptoServiceProvider();
+#if !NETCOREAPP11 && !NETSTANDARD15
+            SHA1 sha = new SHA1CryptoServiceProvider();
+#else
+            SHA1 sha = SHA1.Create();
+#endif
 			byte[] res = sha.ComputeHash(data, offset, count);
-			sha.Clear();
-			return res;
+#if !NETCOREAPP11 && !NETSTANDARD15
+            sha.Clear();
+#else
+            sha.Dispose();
+#endif
+            return res;
 		}
 	}
 }

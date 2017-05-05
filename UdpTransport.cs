@@ -14,9 +14,11 @@
 // along with SNMP#NET.  If not, see <http://www.gnu.org/licenses/>.
 // 
 using System;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace SnmpSharpNet
 {
@@ -68,8 +70,12 @@ namespace SnmpSharpNet
 		{
 			if (_socket != null)
 			{
-				_socket.Close();
-				_socket = null;
+#if !NETCOREAPP11 && !NETSTANDARD15
+                _socket.Close();
+#else
+                _socket.Dispose();
+#endif
+                _socket = null;
 			}
 		}
 		/// <summary>
@@ -139,7 +145,8 @@ namespace SnmpSharpNet
 				}
 				catch (SocketException ex)
 				{
-					if (ex.ErrorCode == 10040)
+#if !NETCOREAPP11 && !NETSTANDARD15
+                    if (ex.ErrorCode == 10040)
 					{
 						recv = 0; // Packet too large
 					}
@@ -175,8 +182,46 @@ namespace SnmpSharpNet
 					{
 						// Assume it is a timeout
 					}
-				}
-				if (recv > 0)
+#else
+                    if (ex.SocketErrorCode == SocketError.MessageSize)
+                    {
+                        recv = 0; // Packet too large
+                    }
+                    else if (ex.SocketErrorCode == SocketError.NetworkDown)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: Destination network is down.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.NetworkUnreachable)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: destination network is unreachable.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.ConnectionReset)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: connection reset by peer.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.HostDown)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: remote host is down.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.HostUnreachable)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: remote host is unreachable.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.ConnectionRefused)
+                    {
+                        throw new SnmpNetworkException(ex, "Network error: connection refused.");
+                    }
+                    else if (ex.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        recv = 0; // Connection attempt timed out. Fall through to retry
+                    }
+                    else
+                    {
+                        // Assume it is a timeout
+                    }
+#endif
+                }
+                if (recv > 0)
 				{
 					IPEndPoint remEP = remote as IPEndPoint;
 					if ( ! _noSourceCheck && ! remEP.Equals(netPeer))
@@ -314,21 +359,33 @@ namespace SnmpSharpNet
 			}
 			try
 			{
+#if !NETCOREAPP11 && !NETSTANDARD15
 				_socket.BeginSendTo(_requestState.Packet, 0, _requestState.PacketLength, SocketFlags.None, _requestState.EndPoint, new AsyncCallback(SendToCallback), null);
+#else
+			    _socket.SendToAsync(new ArraySegment<byte>(_requestState.Packet), SocketFlags.None, _requestState.EndPoint)
+			        .ContinueWith(SendToCallback);
+#endif
 			}
-			catch
+            catch
 			{
                 _busy = false;
                 _requestState = null;
                 _asyncCallback(AsyncRequestResult.SocketSendError, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
 			}
 		}
+
 		/// <summary>
 		/// Callback member called on completion of BeginSendTo send data operation.
 		/// </summary>
 		/// <param name="ar">Async result</param>
-		internal void SendToCallback(IAsyncResult ar)
-		{
+		internal void SendToCallback(
+#if !NETCOREAPP11 && !NETSTANDARD15
+IAsyncResult ar
+#else
+            Task<int> ar
+#endif
+            )
+{
 			if (_socket == null || ! _busy || _requestState == null)
 			{
 				_busy = false;
@@ -337,10 +394,11 @@ namespace SnmpSharpNet
 				return; // socket has been closed. no new operations are possible.
 			}
 			int sentLength = 0;
-			try
+#if !NETCOREAPP11 && !NETSTANDARD15
+            try
 			{
-				sentLength = _socket.EndSendTo(ar);
-			}
+                sentLength = _socket.EndSendTo(ar);
+        }
 			catch (NullReferenceException ex)
 			{
 				ex.GetType();
@@ -353,7 +411,27 @@ namespace SnmpSharpNet
 			{
 				sentLength = 0;
 			}
-			if (sentLength != _requestState.PacketLength)
+#else
+            if (ar.Exception != null)
+            {
+                if (ar.Exception.InnerExceptions.Any(x => x is NullReferenceException))
+                {
+                    _busy = false;
+                    _requestState = null;
+                    _asyncCallback(AsyncRequestResult.Terminated, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
+                    return;
+                }
+                else
+                {
+                    sentLength = 0;
+                }
+            }
+            else
+            {
+                sentLength = ar.Result;
+            }
+#endif
+            if (sentLength != _requestState.PacketLength)
 			{
                 _busy = false;
                 _requestState = null;
@@ -364,10 +442,10 @@ namespace SnmpSharpNet
 			ReceiveBegin(); // Initialize a receive call
 		}
 
-		/// <summary>
-		/// Begin async version of ReceiveFrom member of the socket class.
-		/// </summary>
-		internal void ReceiveBegin()
+        /// <summary>
+        /// Begin async version of ReceiveFrom member of the socket class.
+        /// </summary>
+        internal void ReceiveBegin()
 		{
 			// kill the timeout timer
 			if(_requestState.Timer != null)
@@ -390,9 +468,14 @@ namespace SnmpSharpNet
 			EndPoint ep = (EndPoint)_receivePeer;
 			try
 			{
+#if !NETCOREAPP11 && !NETSTANDARD15
 				_socket.BeginReceiveFrom(_inBuffer, 0, _inBuffer.Length, SocketFlags.None, ref ep, new AsyncCallback(ReceiveFromCallback), null);
+#else
+			    _socket.ReceiveFromAsync(new ArraySegment<byte>(_inBuffer), SocketFlags.None, ep)
+			        .ContinueWith(ReceiveFromCallback);
+#endif
 			}
-			catch
+            catch
 			{
 
 				// retry on every error. this can be done better by evaluating the returned
@@ -445,7 +528,13 @@ namespace SnmpSharpNet
 		/// of results.
 		/// </summary>
 		/// <param name="ar">Async call result used by <seealso cref="Socket.EndReceiveFrom"/></param>
-		internal void ReceiveFromCallback(IAsyncResult ar)
+		internal void ReceiveFromCallback(
+#if !NETCOREAPP11 && !NETSTANDARD15
+            IAsyncResult ar
+#else
+            Task<SocketReceiveFromResult> ar
+#endif
+            )
 		{
 			// kill the timer if one is active
 			if (_requestState.Timer != null)
@@ -465,11 +554,12 @@ namespace SnmpSharpNet
 			}
 			int inlen = 0;
 			EndPoint ep = (EndPoint)_receivePeer;
-			try
+#if !NETCOREAPP11 && !NETSTANDARD15
+            try
 			{
 				inlen = _socket.EndReceiveFrom(ar, ref ep);
-			}
-			catch (SocketException ex)
+            }
+            catch (SocketException ex)
 			{
 				if (ex.ErrorCode == 10040)
 				{
@@ -544,7 +634,41 @@ namespace SnmpSharpNet
 				// we don't care what exception happened. We only want to know if we should retry the request
 				inlen = 0;
 			}
-			if (inlen == 0 )
+#else
+		    if (ar.Exception != null)
+		    {
+		        var ex = (SocketException) ar.Exception.InnerExceptions.FirstOrDefault(x => x is SocketException);
+		        if (ex != null)
+		        {
+		            if (ex.SocketErrorCode == SocketError.MessageSize || ex.SocketErrorCode == SocketError.TimedOut)
+		            {
+		                inlen = 0; // Packet too large
+		            }
+		            else
+		            {
+		                _busy = false;
+		                _requestState = null;
+		                _asyncCallback(AsyncRequestResult.SocketReceiveError, null, null, -1);
+		                return;
+		            }
+		        }
+		        else if (ar.Exception.InnerExceptions.Any(x => x is ObjectDisposedException) || ar.Exception.InnerExceptions.Any(x => x is NullReferenceException))
+		        {
+		            _asyncCallback(AsyncRequestResult.Terminated, null, null, -1);
+		            return;
+		        }
+		        else
+		        {
+		            inlen = 0;
+		        }
+		    }
+		    else
+		    {
+		        inlen = ar.Result.ReceivedBytes;
+		    }
+
+#endif
+            if (inlen == 0 )
 			{
 				RetryAsyncRequest();
 			}
@@ -588,9 +712,13 @@ namespace SnmpSharpNet
 			{
 				try
 				{
+#if !NETCOREAPP11 && !NETSTANDARD15
 					_socket.Close();
-				}
-				catch
+#else
+                    _socket.Dispose();
+#endif
+                }
+                catch
 				{
 				}
 				_socket = null;

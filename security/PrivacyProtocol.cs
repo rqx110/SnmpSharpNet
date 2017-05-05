@@ -44,7 +44,8 @@ namespace SnmpSharpNet
 		{
 			if (privProtocol == PrivacyProtocols.None)
 				return null;
-			else if (privProtocol == PrivacyProtocols.DES)
+#if !NETCOREAPP11 && !NETSTANDARD15
+            else if (privProtocol == PrivacyProtocols.DES)
 				return new PrivacyDES();
 			else if (privProtocol == PrivacyProtocols.AES128)
 				return new PrivacyAES128();
@@ -52,6 +53,7 @@ namespace SnmpSharpNet
 				return new PrivacyAES192();
 			else if (privProtocol == PrivacyProtocols.AES256)
 				return new PrivacyAES256();
+#endif
 			else if (privProtocol == PrivacyProtocols.TripleDES)
 				return new Privacy3DES();
 			return null;

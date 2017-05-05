@@ -22,7 +22,10 @@ namespace SnmpSharpNet
 	/// The Party Clock is currently
 	/// Obsolete, but included for backwards compatibility. Obsoleted in RFC 1902.
 	/// </remarks>
-	public class V2PartyClock:UInteger32,ICloneable
+	public class V2PartyClock:UInteger32
+#if !NETCOREAPP11 && !NETSTANDARD15
+,ICloneable
+#endif
 	{
 		/// <summary>Constructor</summary>
 		public V2PartyClock():base()
@@ -50,7 +53,8 @@ namespace SnmpSharpNet
 		{
 			return new V2PartyClock(this);
 		}
-		
+#if !NETCOREAPP11 && !NETSTANDARD15
+
 		/// <summary>Returns the string representation of the object.</summary>
 		/// <returns>String representation of the class value.</returns>
 		public override System.String ToString()
@@ -94,5 +98,6 @@ namespace SnmpSharpNet
 			
 			return buf.ToString();
 		}
+#endif
 	}
 }

@@ -16,15 +16,20 @@
 using System;
 namespace SnmpSharpNet
 {
-	
-	
-	/// <summary>SMI TimeTicks class</summary>
-	/// <remarks>
-	/// TimeTicks value is stored as an unsigned
-	/// 32-bit integer representing device uptime in 1/100s of a second time periods.
-	/// </remarks>
+
+
+    /// <summary>SMI TimeTicks class</summary>
+    /// <remarks>
+    /// TimeTicks value is stored as an unsigned
+    /// 32-bit integer representing device uptime in 1/100s of a second time periods.
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class TimeTicks:UInteger32,ICloneable
+#endif
+	public class TimeTicks:UInteger32
+#if !NETCOREAPP11 && !NETSTANDARD15
+        ,ICloneable
+#endif
 	{
 		/// <summary>Constructor</summary>
 		public TimeTicks():base()
@@ -98,7 +103,8 @@ namespace SnmpSharpNet
 				return res;
 			}
 		}
-
+#if !NETCOREAPP11 && !NETSTANDARD15
+        
 		/// <summary>
 		/// Returns the string representation of the object.
 		/// </summary>
@@ -152,5 +158,6 @@ namespace SnmpSharpNet
 		{
 			return _value.GetHashCode();
 		}
+#endif
 	}
 }

@@ -24,8 +24,11 @@ namespace SnmpSharpNet
 	/// <summary>
 	/// User security model implementation class.
 	/// </summary>
-	public class UserSecurityModel : AsnType, ICloneable
-	{
+	public class UserSecurityModel : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		/// <summary>
 		/// Authoritative engine id
 		/// </summary>
