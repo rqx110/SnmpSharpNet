@@ -16,16 +16,23 @@
 using System;
 namespace SnmpSharpNet
 {
-	/// <summary>ASN.1 Integer32 class.</summary>
-	/// <remarks>
-	/// This class defines the SNMP 32-bit signed integer
-	/// used by the SNMP SMI. This class also serves as a 
-	/// base class for any additional SNMP SMI types that 
-	/// exits now or may be defined in the future.
-	/// </remarks>
+    /// <summary>ASN.1 Integer32 class.</summary>
+    /// <remarks>
+    /// This class defines the SNMP 32-bit signed integer
+    /// used by the SNMP SMI. This class also serves as a 
+    /// base class for any additional SNMP SMI types that 
+    /// exits now or may be defined in the future.
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class Integer32 : AsnType, IComparable<Integer32>, IComparable<Int32>, ICloneable
-	{
+#endif
+	public class Integer32 : AsnType, IComparable<Integer32>, IComparable<Int32>
+#if !NETCOREAPP11 && !NETSTANDARD15
+, ICloneable
+#else
+        ,IEquatable<Integer32>,IEquatable<int>
+#endif
+    {
 		/// <summary>Internal class value</summary>
 		protected int _value;
 		
@@ -118,27 +125,14 @@ namespace SnmpSharpNet
 		{
 			return new Integer32(this);
 		}
-		
+#if !NETCOREAPP11 && !NETSTANDARD15
 		/// <summary> Returns the string representation of the object.</summary>
 		/// <returns>String representation of the class value.</returns>
 		public override System.String ToString()
 		{
 			return _value.ToString();
 		}
-
-		/// <summary>
-		/// Implicit casting of Integer32 value as Int32 value
-		/// </summary>
-		/// <param name="value">Integer32 class whose value is cast as Int32 value</param>
-		/// <returns>Int32 value of the Integer32 class.</returns>
-		public static implicit operator Int32(Integer32 value)
-		{
-			if (value == null)
-				return 0;
-			return value.Value;
-		}
-
-		/// <summary>
+        /// <summary>
 		/// Return class value hash code
 		/// </summary>
 		/// <returns>Int32 hash of the class stored value</returns>
@@ -146,6 +140,66 @@ namespace SnmpSharpNet
 		{
 			return _value.GetHashCode();
 		}
+        /// <summary>
+		/// Compare class value against the object argument. Supported argument types are 
+		/// <see cref="Integer32"/> and Int32.
+		/// </summary>
+		/// <param name="obj">Object to compare values with</param>
+		/// <returns>True if object value is the same as this class, otherwise false.</returns>
+		public override bool Equals(object obj)
+		{
+			if (obj is Integer32)
+			{
+				Integer32 i32 = (Integer32)obj;
+				return _value.Equals(i32.Value);
+			}
+			else if (obj is Int32)
+			{
+				Int32 i32 = (Int32)obj;
+				return _value.Equals(i32);
+			}
+			return false; // last resort
+		}
+#else
+        /// <summary>
+        /// Compare class value against the object argument. Supported argument types are 
+        /// <see cref="Integer32"/> and Int32.
+        /// </summary>
+        /// <param name="obj">Object to compare values with</param>
+        /// <returns>True if object value is the same as this class, otherwise false.</returns>
+        public bool Equals(Integer32 obj)
+        {
+            if (obj is Integer32)
+            {
+                Integer32 i32 = (Integer32)obj;
+                return _value.Equals(i32.Value);
+            }
+            return false; // last resort
+        }
+        /// <summary>
+        /// Compare class value against the object argument. Supported argument types are 
+        /// <see cref="Integer32"/> and Int32.
+        /// </summary>
+        /// <param name="obj">Object to compare values with</param>
+        /// <returns>True if object value is the same as this class, otherwise false.</returns>
+        public bool Equals(int obj)
+        {
+            return _value.Equals(obj);
+        }
+#endif
+        /// <summary>
+        /// Implicit casting of Integer32 value as Int32 value
+        /// </summary>
+        /// <param name="value">Integer32 class whose value is cast as Int32 value</param>
+        /// <returns>Int32 value of the Integer32 class.</returns>
+        public static implicit operator Int32(Integer32 value)
+		{
+			if (value == null)
+				return 0;
+			return value.Value;
+		}
+
+
 
 		/// <summary>
 		/// Set class value to a random integer.
@@ -156,7 +210,7 @@ namespace SnmpSharpNet
 			_value = rand.Next();
 		}
 
-		#region encode and decode methods
+#region encode and decode methods
 
 		/// <summary> Used to encode the integer value into an ASN.1 buffer.
 		/// The passed encoder defines the method for encoding the
@@ -275,7 +329,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 
-		#endregion encode and decode methods
+#endregion encode and decode methods
 
 		/// <summary>
 		/// Compare implementation that will compare this class value with the value of another <see cref="Integer32"/> class.
@@ -301,26 +355,7 @@ namespace SnmpSharpNet
 			return _value.CompareTo(other);
 		}
 
-		/// <summary>
-		/// Compare class value against the object argument. Supported argument types are 
-		/// <see cref="Integer32"/> and Int32.
-		/// </summary>
-		/// <param name="obj">Object to compare values with</param>
-		/// <returns>True if object value is the same as this class, otherwise false.</returns>
-		public override bool Equals(object obj)
-		{
-			if (obj is Integer32)
-			{
-				Integer32 i32 = (Integer32)obj;
-				return _value.Equals(i32.Value);
-			}
-			else if (obj is Int32)
-			{
-				Int32 i32 = (Int32)obj;
-				return _value.Equals(i32);
-			}
-			return false; // last resort
-		}
+
 
 		/// <summary>
 		/// Comparison operator

@@ -16,17 +16,22 @@
 using System;
 namespace SnmpSharpNet
 {
-	
-	
-	/// <summary>SNMPv2 noSuchInstance error</summary>
-	/// <remarks>
-	/// Returned when requested instance is not present in a table of the SNMP version 2 agent.
-	/// 
-	/// This type is returned as value to a requested Oid. When looping through results, check Vb.Value
-	/// member for V2Error returns.
-	/// </remarks>
-	[Serializable]
-	public class NoSuchInstance : V2Error, ICloneable
+
+
+    /// <summary>SNMPv2 noSuchInstance error</summary>
+    /// <remarks>
+    /// Returned when requested instance is not present in a table of the SNMP version 2 agent.
+    /// 
+    /// This type is returned as value to a requested Oid. When looping through results, check Vb.Value
+    /// member for V2Error returns.
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class NoSuchInstance : V2Error
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
 	{
 		/// <summary>Constructor.</summary>
 		public NoSuchInstance():base()
@@ -76,11 +81,13 @@ namespace SnmpSharpNet
 			BuildHeader(buffer, Type, 0);
 		}
 
+#if !NETCOREAPP11 && !NETSTANDARD15
 		/// <summary> Returns the string representation of the object.</summary>
 		/// <returns>String representatio of the class</returns>
 		public override System.String ToString()
 		{
 			return "SNMP No-Such-Instance";
 		}
+#endif
 	}
 }

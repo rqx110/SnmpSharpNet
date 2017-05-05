@@ -22,7 +22,10 @@ namespace SnmpSharpNet {
 	/// <summary>
 	/// Vb item. Stores Oid => value pair for each value
 	/// </summary>
-	public class Vb : AsnType, ICloneable
+	public class Vb : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+, ICloneable
+#endif
 	{
 		/// <summary>
 		/// OID of the object
@@ -123,6 +126,8 @@ namespace SnmpSharpNet {
 		public override Object Clone() {
 			return new Vb(this._oid, this._value);
 		}
+#if !NETCOREAPP11 && !NETSTANDARD15
+
 		/// <summary>
 		/// Return printable string in the format oid: value
 		/// </summary>
@@ -130,6 +135,7 @@ namespace SnmpSharpNet {
 		public override string ToString() {
 			return _oid.ToString() + ": (" + SnmpConstants.GetTypeName(_value.Type) + ") " + _value.ToString();
 		}
+#endif
 		/// <summary>BER encode the variable binding
 		/// </summary>
 		/// <param name="buffer"><see cref="MutableByte"/> class to the end of which encoded variable

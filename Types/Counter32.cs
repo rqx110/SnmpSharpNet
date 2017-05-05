@@ -16,16 +16,21 @@
 using System;
 namespace SnmpSharpNet
 {
-	/// <summary>SMI Counter32 type implementation.</summary>
-	/// <remarks>
-	/// Counter32 value type is a 32-bit unsigned integer object that
-	/// is incremented by an agent until maximum unsigned integer value
-	/// is reached. When maximum value is reached, Counter32 value will
-	/// roll over to 0.
-	/// </remarks>
-	[Serializable]
-	public class Counter32:UInteger32, System.ICloneable
-	{		
+    /// <summary>SMI Counter32 type implementation.</summary>
+    /// <remarks>
+    /// Counter32 value type is a 32-bit unsigned integer object that
+    /// is incremented by an agent until maximum unsigned integer value
+    /// is reached. When maximum value is reached, Counter32 value will
+    /// roll over to 0.
+    /// </remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class Counter32: UInteger32
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {		
 		/// <summary>Constructor</summary>
 		public Counter32():base()
 		{

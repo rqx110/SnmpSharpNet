@@ -16,12 +16,17 @@
 using System;
 namespace SnmpSharpNet
 {
-	/// <summary>
-	/// Returned when end of MIB has been reached when performing GET-NEXT or GET-BULK operations.
-	/// </summary>
-	[Serializable]
-	public class EndOfMibView : V2Error, System.ICloneable
-	{
+    /// <summary>
+    /// Returned when end of MIB has been reached when performing GET-NEXT or GET-BULK operations.
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class EndOfMibView : V2Error
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		/// <summary> The default class construtor.</summary>
 		public EndOfMibView():base()
 		{
@@ -72,13 +77,14 @@ namespace SnmpSharpNet
 		{
 			BuildHeader(buffer, Type, 0);
 		}
-		
-		/// <summary> Returns the string representation of the object.
-		/// </summary>
-		/// <returns>String prepresentation of the object.</returns>
-		public override String ToString()
+#if !NETCOREAPP11 && !NETSTANDARD15
+        /// <summary> Returns the string representation of the object.
+        /// </summary>
+        /// <returns>String prepresentation of the object.</returns>
+        public override String ToString()
 		{
 			return "SNMP End-of-MIB-View";
 		}
+#endif
 	}
 }

@@ -58,15 +58,19 @@ namespace SnmpSharpNet
 		/// <remarks>Destructors only purpose is to close the Socket used by the class.</remarks>
 		~TrapAgent()
 		{
-			_sock.Close();
-		}
-		/// <summary>
-		/// Send SNMP version 1 Trap notification
-		/// </summary>
-		/// <param name="packet">SNMP v1 Trap packet class</param>
-		/// <param name="peer">Manager (receiver) IP address</param>
-		/// <param name="port">Manager (receiver) UDP port number</param>
-		public void SendV1Trap(SnmpV1TrapPacket packet, IpAddress peer, int port)
+#if !NETCOREAPP11 && !NETSTANDARD15
+            _sock.Close();
+#else
+            _sock.Dispose();
+#endif
+        }
+        /// <summary>
+        /// Send SNMP version 1 Trap notification
+        /// </summary>
+        /// <param name="packet">SNMP v1 Trap packet class</param>
+        /// <param name="peer">Manager (receiver) IP address</param>
+        /// <param name="port">Manager (receiver) UDP port number</param>
+        public void SendV1Trap(SnmpV1TrapPacket packet, IpAddress peer, int port)
 		{
 			byte[] outBuffer = packet.encode();
 			_sock.SendTo(outBuffer, new IPEndPoint((IPAddress)peer, port));

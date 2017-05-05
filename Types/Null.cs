@@ -16,10 +16,15 @@
 using System;
 namespace SnmpSharpNet
 {
-	
-	/// <summary>ASN.1 Null value implementation.</summary>
+
+    /// <summary>ASN.1 Null value implementation.</summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class Null : AsnType, ICloneable
+#endif
+    public class Null : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
 	{
 		/// <summary>Constructor</summary>
 		public Null()
@@ -33,7 +38,7 @@ namespace SnmpSharpNet
 		{
 		}
 		
-		#region Encode & decode methods
+#region Encode & decode methods
 
 		/// <summary> 
 		/// ASN.1 encode Null value
@@ -70,7 +75,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 		
-		#endregion Encode & decode methods
+#endregion Encode & decode methods
 		
 		/// <summary>Clone current object</summary>
 		/// <returns>Duplicate of the current object.</returns>
@@ -78,12 +83,14 @@ namespace SnmpSharpNet
 		{
 			return new Null(this);
 		}
-		
+#if !NETCOREAPP11 && !NETSTANDARD15
+
 		/// <summary> Returns a string representation of the SNMP NULL object</summary>
 		/// <returns>String representation of the class</returns>
 		public override System.String ToString()
 		{
 			return "Null";
 		}
+#endif
 	}
 }

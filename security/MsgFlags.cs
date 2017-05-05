@@ -28,8 +28,11 @@ namespace SnmpSharpNet
 	/// Message flags field is a 1 byte <see cref="OctetString"/> encoded
 	/// field.
 	/// </remarks>
-	public class MsgFlags : AsnType, ICloneable
-	{
+	public class MsgFlags : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+, ICloneable
+#endif
+    {
 		/// <summary>
 		/// Bit value that, when set, indicates that packet has been authenticated.
 		/// </summary>
@@ -159,6 +162,7 @@ namespace SnmpSharpNet
 		{
 			return new MsgFlags(_authenticationFlag, _privacyFlag, _reportableFlag);
 		}
+#if !NETCOREAPP11 && !NETSTANDARD15
 
 		/// <summary>
 		/// Return string representation of the object.
@@ -169,5 +173,6 @@ namespace SnmpSharpNet
 			return string.Format("Reportable {0} Authenticated {1} Privacy {2}", _reportableFlag.ToString(),
 				_authenticationFlag.ToString(), _privacyFlag.ToString());
 		}
+#endif
 	}
 }

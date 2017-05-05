@@ -120,9 +120,13 @@ namespace SnmpSharpNet
 
 			int password_index = 0;
 			int count = 0;
-			MD5 md5 = new MD5CryptoServiceProvider();
+#if !NETCOREAPP11 && !NETSTANDARD15
+            MD5 md5 = new MD5CryptoServiceProvider();
+#else
+            MD5 md5 = MD5.Create();
+#endif
 
-			byte[] sourceBuffer = new byte[1048576];
+            byte[] sourceBuffer = new byte[1048576];
 			byte[] buf = new byte[64];
 			while (count < 1048576)
 			{
@@ -169,10 +173,18 @@ namespace SnmpSharpNet
 		/// <returns>Hash value</returns>
 		public byte[] ComputeHash(byte[] data, int offset, int count)
 		{
-			MD5 md5 = new MD5CryptoServiceProvider();
-			byte[] res = md5.ComputeHash(data, offset, count);
-			md5.Clear();
-			return res;
+#if !NETCOREAPP11 && !NETSTANDARD15
+            MD5 md5 = new MD5CryptoServiceProvider();
+#else
+            MD5 md5 = MD5.Create();
+#endif
+            byte[] res = md5.ComputeHash(data, offset, count);
+#if !NETCOREAPP11 && !NETSTANDARD15
+			md5.Clear(); // release resources
+#else
+            md5.Dispose();
+#endif
+            return res;
 		}
 	}
 }

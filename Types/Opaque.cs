@@ -19,13 +19,18 @@ namespace SnmpSharpNet
 {
 
 
-	/// <summary>Opaque type is an application-wide type supports the capability to pass arbitrary
-	/// ASN.1 syntax</summary>
-	/// <remarks>SMIv2 defines Opaque type as provided solely for backward-compatibility, and
-	/// shall not be used for newly-defined object types</remarks>
-	[Serializable]
-	public class Opaque : OctetString, System.ICloneable
-	{
+    /// <summary>Opaque type is an application-wide type supports the capability to pass arbitrary
+    /// ASN.1 syntax</summary>
+    /// <remarks>SMIv2 defines Opaque type as provided solely for backward-compatibility, and
+    /// shall not be used for newly-defined object types</remarks>
+#if !NETCOREAPP11 && !NETSTANDARD15
+    [Serializable]
+#endif
+    public class Opaque : OctetString
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {
 		/// <summary>Constructor</summary>
 		public Opaque():base()
 		{

@@ -17,11 +17,16 @@ using System;
 using System.Globalization;
 namespace SnmpSharpNet
 {
-	
-	/// <summary>SMI unsigned 32-bit integer value class.
-	/// </summary>
+
+    /// <summary>SMI unsigned 32-bit integer value class.
+    /// </summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class UInteger32 : AsnType, IComparable<UInteger32>, IComparable<UInt32>
+#endif
+    public class UInteger32 : AsnType, IComparable<UInteger32>, IComparable<UInt32>
+#if NETCOREAPP11 || NETSTANDARD15
+        ,IEquatable<UInteger32>,IEquatable<uint>
+#endif
 	{
 		/// <summary>Internal unsigned integer 32-bit value
 		/// </summary>
@@ -106,14 +111,7 @@ namespace SnmpSharpNet
 			}
 		}
 
-		/// <summary> 
-		/// Returns the string representation of the object.
-		/// </summary>
-		/// <returns>String representation of the of the class value.</returns>
-		public override System.String ToString()
-		{
-			return System.Convert.ToString(_value, CultureInfo.CurrentCulture);
-		}
+
 
 		/// <summary>
 		/// Returns a duplicate of the current object
@@ -138,7 +136,7 @@ namespace SnmpSharpNet
 			return value.Value;
 		}
 
-		#region Encode and decode methods
+#region Encode and decode methods
 
 		/// <summary>BER encode class value.</summary>
 		/// <param name="buffer">Target buffer. Value is appended to the end of it.</param>
@@ -205,7 +203,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 		
-		#endregion Encode and decode methods
+#endregion Encode and decode methods
 
 		/// <summary>
 		/// Compare implementation that will compare this class value with the value of another <see cref="UInteger32"/> class.
@@ -226,6 +224,7 @@ namespace SnmpSharpNet
 		{
 			return _value.CompareTo(other);
 		}
+#if !NETCOREAPP11 && !NETSTANDARD15
 
 		/// <summary>
 		/// Compare class value against the object argument. Supported argument types are 
@@ -249,14 +248,62 @@ namespace SnmpSharpNet
 			}
 			return false; // last resort
 		}
-
-		/// <summary>
-		/// Comparison operator
+        		/// <summary> 
+		/// Returns the string representation of the object.
 		/// </summary>
-		/// <param name="first">First <see cref="UInteger32"/> class value to compare</param>
-		/// <param name="second">Second <see cref="UInteger32"/> class value to compare</param>
-		/// <returns>True if class values match, otherwise false</returns>
-		public static bool operator ==(UInteger32 first, UInteger32 second)
+		/// <returns>String representation of the of the class value.</returns>
+		public override System.String ToString()
+		{
+			return System.Convert.ToString(_value, CultureInfo.CurrentCulture);
+		}
+
+        		/// <summary>
+		/// Returns hashed class value.
+		/// </summary>
+		/// <returns>Int32 hash value</returns>
+		public override int GetHashCode()
+		{
+			return _value.GetHashCode();
+		}
+#else
+        /// <summary>
+        /// Compare class value against the object argument. Supported argument types are 
+        /// <see cref="UInteger32"/> and Int32.
+        /// </summary>
+        /// <param name="obj">Object to compare values with</param>
+        /// <returns>True if object value is the same as this class, otherwise false.</returns>
+        public bool Equals(UInteger32 obj)
+        {
+            if (obj == null)
+                return false;
+           
+                UInteger32 u32 = (UInteger32)obj;
+                return _value.Equals(u32.Value);
+            
+        }
+
+	    /// <summary>
+	    /// Compare class value against the object argument. Supported argument types are 
+	    /// <see cref="UInteger32"/> and Int32.
+	    /// </summary>
+	    /// <param name="obj">Object to compare values with</param>
+	    /// <returns>True if object value is the same as this class, otherwise false.</returns>
+	    public bool Equals(uint obj)
+	    {
+	        if (obj == null)
+	            return false;
+
+	        UInt32 u32 = (UInt32) obj;
+	        return _value.Equals(u32);
+	    }
+#endif
+        /// <summary>
+        /// Comparison operator
+        /// </summary>
+        /// <param name="first">First <see cref="UInteger32"/> class value to compare</param>
+        /// <param name="second">Second <see cref="UInteger32"/> class value to compare</param>
+        /// <returns>True if class values match, otherwise false</returns>
+        public static bool operator ==(UInteger32 first, UInteger32 second)
 		{
 			if ((object)first == null && (object)second == null)
 				return true;
@@ -315,14 +362,7 @@ namespace SnmpSharpNet
 			return false;
 		}
 
-		/// <summary>
-		/// Returns hashed class value.
-		/// </summary>
-		/// <returns>Int32 hash value</returns>
-		public override int GetHashCode()
-		{
-			return _value.GetHashCode();
-		}
+
 		/// <summary>
 		/// Addition operator.
 		/// </summary>

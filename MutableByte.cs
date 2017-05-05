@@ -43,7 +43,10 @@ namespace SnmpSharpNet
 	/// buffer.Reset(); // Erase all the data from the buffer
 	/// </code>
 	/// </remarks>
-	public class MutableByte: Object, ICloneable, IComparable<MutableByte>, IComparable<byte[]>
+	public class MutableByte: Object, IComparable<MutableByte>, IComparable<byte[]>
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
 	{
 		/// <summary>
 		/// Internal byte buffer

@@ -20,11 +20,18 @@ using System.Collections.Generic;
 
 namespace SnmpSharpNet
 {
-	
-	/// <summary>ASN.1 OctetString type implementation</summary>
+
+    /// <summary>ASN.1 OctetString type implementation</summary>
+#if !NETCOREAPP11 && !NETSTANDARD15
 	[Serializable]
-	public class OctetString : AsnType, ICloneable, IComparable<byte[]>, IComparable<OctetString>, IEnumerable<byte>
-	{
+#endif
+    public class OctetString : AsnType, IComparable<byte[]>, IComparable<OctetString>, IEnumerable<byte>
+#if !NETCOREAPP11 && !NETSTANDARD15
+, ICloneable
+#else
+        ,IEquatable<OctetString>, IEquatable<string>
+#endif
+    {
 		/// <summary>Data buffer</summary>
 		protected byte[] _data;
 		
@@ -317,6 +324,9 @@ namespace SnmpSharpNet
 			}
 			return "";
 		}
+
+#if !NETCOREAPP11 && !NETSTANDARD15
+
 		/// <summary>Return string representation of the OctetStrig object. If non-printable characters have been
 		/// found in the object, output is a hex representation of the string.
 		/// </summary>
@@ -340,27 +350,7 @@ namespace SnmpSharpNet
 			}
 			return rs;
 		}
-
-		/// <summary>
-		/// Return string formatted hexadecimal representation of the objects value.
-		/// </summary>
-		/// <returns>String representation of hexadecimal formatted class value.</returns>
-		public string ToHexString()
-		{
-			StringBuilder b = new StringBuilder();
-			for (int i = 0; i < _data.Length; ++i)
-			{
-				int x = (int)_data[i] & 0xff;
-				if (x < 16)
-					b.Append('0');
-				b.Append(System.Convert.ToString(x, 16).ToUpper());
-
-				if (i < _data.Length - 1)
-					b.Append(' ');
-			}
-			return b.ToString();
-		}
-		/// <summary>
+        /// <summary>
 		/// Compare against another object. Acceptable object types are <see cref="OctetString"/> and
 		/// <see cref="System.String"/>.
 		/// </summary>
@@ -402,6 +392,94 @@ namespace SnmpSharpNet
 		{
 			return base.GetHashCode();
 		}
+#else
+        /// <summary>
+        /// Compare against another object. Acceptable object types are <see cref="OctetString"/> and
+        /// <see cref="System.String"/>.
+        /// </summary>
+        /// <param name="obj">Object of type <see cref="OctetString"/> or <see cref="System.String"/> to compare against</param>
+        /// <returns>true if object content is the same, false if different or if incompatible object type</returns>
+        public bool Equals(OctetString obj)
+        {
+            byte[] d = null;
+
+            OctetString o = obj as OctetString;
+            d = o.GetData();
+
+            // check for null value in comparison
+            if (d == null || _data == null)
+            {
+                if (d == null && _data == null)
+                    return true; // both values are null
+                return false; // one value is not null
+            }
+            if (d.Length != _data.Length)
+            {
+                return false; // Objects have different length
+            }
+            for (int cnt = 0; cnt < d.Length; cnt++)
+            {
+                if (d[cnt] != _data[cnt])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Compare against another object. Acceptable object types are <see cref="OctetString"/> and
+        /// <see cref="System.String"/>.
+        /// </summary>
+        /// <param name="obj">Object of type <see cref="OctetString"/> or <see cref="System.String"/> to compare against</param>
+        /// <returns>true if object content is the same, false if different or if incompatible object type</returns>
+        public bool Equals(string obj)
+        {
+            byte[] d = null;
+
+            d = System.Text.UTF8Encoding.UTF8.GetBytes((String) obj);
+
+            // check for null value in comparison
+            if (d == null || _data == null)
+            {
+                if (d == null && _data == null)
+                    return true; // both values are null
+                return false; // one value is not null
+            }
+            if (d.Length != _data.Length)
+            {
+                return false; // Objects have different length
+            }
+            for (int cnt = 0; cnt < d.Length; cnt++)
+            {
+                if (d[cnt] != _data[cnt])
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+#endif
+        /// <summary>
+        /// Return string formatted hexadecimal representation of the objects value.
+        /// </summary>
+        /// <returns>String representation of hexadecimal formatted class value.</returns>
+        public string ToHexString()
+		{
+			StringBuilder b = new StringBuilder();
+			for (int i = 0; i < _data.Length; ++i)
+			{
+				int x = (int)_data[i] & 0xff;
+				if (x < 16)
+					b.Append('0');
+				b.Append(System.Convert.ToString(x, 16).ToUpper());
+
+				if (i < _data.Length - 1)
+					b.Append(' ');
+			}
+			return b.ToString();
+		}
+		
 		/// <summary>
 		/// Overloading equality operator
 		/// </summary>
@@ -485,7 +563,7 @@ namespace SnmpSharpNet
 			_data = null;
 		}
 
-		#region Encode and decode methods
+#region Encode and decode methods
 
 		/// <summary>BER encode OctetString variable.</summary>
 		/// <param name="buffer"><see cref="MutableByte"/> encoding destination.</param>
@@ -536,7 +614,7 @@ namespace SnmpSharpNet
 			return offset;
 		}
 
-		#endregion Encode and decode methods
+#endregion Encode and decode methods
 
 		/// <summary>
 		/// Returns an enumerator that iterates through the OctetString byte collection

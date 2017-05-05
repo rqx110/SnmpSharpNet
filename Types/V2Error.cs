@@ -21,8 +21,11 @@ namespace SnmpSharpNet
 	/// <remarks>
 	/// For details see <see cref="NoSuchInstance"/>, <see cref="NoSuchObject"/> and <see cref="EndOfMibView"/>.
 	/// </remarks>
-	public class V2Error : AsnType, ICloneable
-	{		
+	public class V2Error : AsnType
+#if !NETCOREAPP11 && !NETSTANDARD15
+        , ICloneable
+#endif
+    {		
 		/// <summary>
 		/// Constructor
 		/// </summary>
