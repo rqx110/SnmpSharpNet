@@ -206,14 +206,14 @@ namespace SnmpSharpNet
 				throw new SnmpException(SnmpException.NoDataReceived, "No data received on request.");
 			}
 			
-			Debug.Print($"Buffer length: {inBuffer.Length}");
+			//Debug.Print($"Buffer length: {inBuffer.Length}");
 			byte[] tempBuffer = inBuffer;
 			int i = tempBuffer.Length -1;
-			while (tempBuffer[i] == 0x00)
+			while (tempBuffer[i-1] == 0x00 && tempBuffer[i] == 0x00)
 				--i;
-			if(i+2 < inBuffer.Length)
+			if(i + 1 < inBuffer.Length)
 				Array.Resize(ref inBuffer, i + 1);
-			Debug.Print($"Buffer length: {inBuffer.Length}");
+			//Debug.Print($"Buffer length: {inBuffer.Length}");
 			// verify packet
 			if (agentParameters.Version == SnmpVersion.Ver1)
 			{
