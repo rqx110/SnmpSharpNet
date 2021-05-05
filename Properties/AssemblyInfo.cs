@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SnmpSharpNet")]
 [assembly: AssemblyDescription("dotNet Simple Network Management Protocol Implementation")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Milan Sinadinovic")]
+[assembly: AssemblyCompany("Atos BNCS")]
 [assembly: AssemblyProduct("SnmpSharpNet")]
-[assembly: AssemblyCopyright("Copyright © Milan Sinadinovic 2008 - 2014")]
+[assembly: AssemblyCopyright("Copyright © Milan Sinadinovic 2008 - 2014, Scott Harman 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -15,5 +15,5 @@ using System.Runtime.InteropServices;
 
 [assembly: Guid("33f5795a-9f55-4965-89bc-0f413452bd0f")]
 
-[assembly: AssemblyVersion("0.9.5")]
-[assembly: AssemblyFileVersion("0.9.5")]
+[assembly: AssemblyVersion("0.9.6")]
+[assembly: AssemblyFileVersion("0.9.6")]

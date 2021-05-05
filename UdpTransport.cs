@@ -211,6 +211,7 @@ namespace SnmpSharpNet
 						throw new SnmpException(SnmpException.RequestTimedOut, "Request has reached maximum retries.");
 					}
 				}
+				_socket.Close();
 			}
 		}
 
