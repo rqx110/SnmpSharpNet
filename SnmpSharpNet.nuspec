@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>LocalVersion.SnmpSharpNet</id>
+    <version>0.9.6</version>
+    <title>SnmpSharpNet</title>
+    <authors>Milan Sinadinovic 2008 - 2014, Scott Harman 2021</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">MIT</license>
+    <description>SNMP Implementation in C# - supports 1,2, and 2c. SNMPSharp.net - local Nuget with enhancements to cope with Evertz weirdness</description>
+    <releaseNotes>0.9.6 explicitly remove trailing NULLs from payloads</releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>SNMP</tags>
+  </metadata>
+   <files>
+    <file src=".\bin\Debug\*.dll" target="lib\net472"/>
+	    <file src=".\bin\Debug\*.pdb"  target="lib\net472"/>
+    </files>
+</package>
