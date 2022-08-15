@@ -151,7 +151,7 @@ namespace SnmpSharpNet
 		{
 			get
 			{
-				if (_peerIP == IPAddress.None || _peerIP == IPAddress.Any)
+				if (_peerIP.Equals(IPAddress.None) || _peerIP.Equals(IPAddress.Any))
 				{
 					return false;
 				}
