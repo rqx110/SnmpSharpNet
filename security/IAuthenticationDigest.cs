@@ -49,6 +49,15 @@ namespace SnmpSharpNet
 		}
 
 		/// <summary>
+		/// Returns the size of the authentification header length. This value represent the size of the digest
+		/// that is stored inside the USM authentication parameters header.
+		/// </summary>
+		int AuthentificationHeaderLength
+        {
+			get;
+        }
+
+		/// <summary>
 		/// Authenticate incoming messages
 		/// </summary>
 		/// <param name="authentiationSecret">Authentication user secret (password)</param>

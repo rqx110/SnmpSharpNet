@@ -52,6 +52,9 @@
     <Compile Include="AsyncRequestState.cs" />
     <Compile Include="PduErrorStatus.cs" />
     <Compile Include="PduType.cs" />
+    <Compile Include="security\AuthenticationSHA256.cs" />
+    <Compile Include="security\AuthenticationSHA384.cs" />
+    <Compile Include="security\AuthenticationSHA512.cs" />
     <Compile Include="security\Privacy3DES.cs" />
     <Compile Include="security\PrivacyAES192.cs" />
     <Compile Include="security\PrivacyAES256.cs" />

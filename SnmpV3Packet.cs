@@ -538,7 +538,14 @@ namespace SnmpSharpNet
 			if (_msgFlags.Authentication && _userSecurityModel.EngineId.Length > 0)
 			{
 				// Authenticate packet
-				if (_userSecurityModel.AuthenticationParameters.Length != 12)
+				int expectedLength = 12;
+
+				IAuthenticationDigest authProto = SnmpSharpNet.Authentication.GetInstance(_userSecurityModel.Authentication);
+				if (authProto != null)
+				{
+					expectedLength = authProto.AuthentificationHeaderLength;
+				}
+				if (_userSecurityModel.AuthenticationParameters.Length != expectedLength)
 					throw new SnmpAuthenticationException("Invalid authentication parameter field length.");
 				if (!_userSecurityModel.IsAuthentic(authKey, buffer))
 					throw new SnmpAuthenticationException("Authentication of the incoming packet failed.");
