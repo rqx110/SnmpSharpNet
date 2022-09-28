@@ -296,8 +296,15 @@ namespace SnmpSharpNet
 			{
 				if (_authenticationParameters.Length <= 0)
 				{
-					// If authentication is used, set authentication parameters field to 12 bytes set to 0x00
-					_authenticationParameters.Set(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
+					// If authentication is used, set authentication parameters field to 0x00 with the authentification length of the auth protocol.
+					IAuthenticationDigest authProto = SnmpSharpNet.Authentication.GetInstance(_authentication);
+					int size = authProto.AuthentificationHeaderLength;
+					byte[] zeros = new byte[size];
+					for(int i=0; i < size; i++)
+                    {
+						zeros[i] = 0x00;
+                    }
+					_authenticationParameters.Set(zeros);
 				}
 			}
 			else
