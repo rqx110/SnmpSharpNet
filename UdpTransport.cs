@@ -91,15 +91,39 @@ namespace SnmpSharpNet
 			}
 			if (useV6)
 			{
-				_socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                if (_UsedProtocol == ProtocolType.Udp)
+                {
+                    _socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                }
+                else if (_UsedProtocol == ProtocolType.Tcp)
+                {
+                    _socket = new Socket(AddressFamily.InterNetworkV6, SocketType.Stream, ProtocolType.Tcp);
+                }
+                else
+                {
+                    throw new SnmpException("Invalid protocol type (UDP/TCP)");
+                }
 			}
 			else
 			{
-				_socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                if (_UsedProtocol == ProtocolType.Udp)
+                {
+                    _socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                }
+                else if (_UsedProtocol == ProtocolType.Tcp)
+                {
+                    _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                }
+                else
+                {
+                    throw new SnmpException("Invalid protocol type (UDP/TCP)");
+                }
 			}
 			IPEndPoint ipEndPoint = new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
 			EndPoint ep = (EndPoint)ipEndPoint;
 			_socket.Bind(ep);
+
+            _socket.ReceiveBufferSize = 64 * 1024;
 		}
 		/// <summary>
 		/// Make sync request using IP/UDP with request timeouts and retries.
@@ -128,14 +152,53 @@ namespace SnmpSharpNet
 			_socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
 			int recv = 0;
 			int retry = 0;
+            bool retryWithoutSend = false;
+
 			byte[] inbuffer = new byte[64 * 1024];
-			EndPoint remote = (EndPoint)new IPEndPoint(peer.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any,0);
+
+            EndPoint remote = null;
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                remote = (EndPoint)new IPEndPoint(peer.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
+            }
+            else if (_UsedProtocol == ProtocolType.Tcp)
+            {
+                remote = (EndPoint)new IPEndPoint(peer, port);
+
+                //connect socket before sending data
+                if (!_socket.Connected)
+                    _socket.Connect(netPeer);
+            }
+            else
+            {
+                throw new SnmpException("Invalid protocol type (UDP/TCP)");
+            }
 			while (true)
 			{
 				try
 				{
-					_socket.SendTo(buffer, bufferLength, SocketFlags.None, (EndPoint)netPeer);
-					recv = _socket.ReceiveFrom(inbuffer, ref remote);
+                    if (retryWithoutSend == false)  //don't send the stream in case the retry procedure expects another response
+                    {
+                        _socket.SendTo(buffer, bufferLength, SocketFlags.None, (EndPoint)netPeer);
+                    }
+                    retryWithoutSend = false;
+
+                    //initial read
+                    recv = _socket.ReceiveFrom(inbuffer, ref remote);
+
+
+                    //can be usefull for very big packages, but will not do this now because it is so ugly (C. Wieand) 
+
+                    //if(bufferLength > 20000 && bufferLength > recv)
+                    //{
+                    //    System.Threading.Thread.Sleep(100);
+                    //}
+                    ////more data available
+                    //while (_socket.Available > 0)
+                    //{
+                    //    recv += _socket.ReceiveFrom(inbuffer, recv, inbuffer.Length - recv, SocketFlags.None, ref remote);
+                    //}
+
 				}
 				catch (SocketException ex)
 				{
@@ -178,10 +241,65 @@ namespace SnmpSharpNet
 				}
 				if (recv > 0)
 				{
+                    //it is possible that a trap was received and the expected response will be received after this ...
+                    try
+                    {
+                        bool bIsTrap = false;
+
+                        // Check protocol version int 
+                        int ver = SnmpPacket.GetProtocolVersion(inbuffer, recv);
+                        if (ver == (int)SnmpVersion.Ver1)
+                        {
+                            // Parse SNMP Version 1 TRAP packet 
+                            SnmpV1TrapPacket pkt = new SnmpV1TrapPacket();
+                            pkt.decode(inbuffer, recv);
+                            
+                            //if we are here, the packet is a trap
+                            bIsTrap = true;
+                        }
+                        else if(ver == (int)SnmpVersion.Ver2)
+                        {
+                            // Parse SNMP Version 2 TRAP packet 
+                            SnmpV2Packet pkt = new SnmpV2Packet();
+                            pkt.decode(inbuffer, recv);
+
+                            if (pkt.Pdu.Type == PduType.V2Trap) 
+                            {
+                                //if we are here it is a V2Packet
+                                bIsTrap = true;
+                            }
+                        }
+                        else if (ver == (int)SnmpVersion.Ver3)
+                        {
+                            //TODO - evalute if the response is a v3 trap 
+
+                        }
+
+                        if (bIsTrap)
+                        {
+                            //we received a trap, don't use this as a answer!
+
+                            //let's try to wait for another response without sending the request again
+                            retryWithoutSend = true;
+
+                            //continue to receive
+                            continue;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        //it is no trap!
+                        retryWithoutSend = false;
+                    }
+
+                    //it is no trap!
+                    retryWithoutSend = false;
+
+
 					IPEndPoint remEP = remote as IPEndPoint;
 					if ( ! _noSourceCheck && ! remEP.Equals(netPeer))
 					{
-                        if (remEP.Address != netPeer.Address)
+                        if (remEP.Address.Equals(netPeer.Address) == false)
                         {
                             Console.WriteLine("Address miss-match {0} != {1}", remEP.Address, netPeer.Address);
                         }
@@ -189,13 +307,14 @@ namespace SnmpSharpNet
                         {
                             Console.WriteLine("Port # miss-match {0} != {1}", remEP.Port, netPeer.Port);
                         }
-						/* Not good, we got a response from somebody other then who we requested a response from */
-						retry++;
-						if (retry > retries)
-						{
-							throw new SnmpException(SnmpException.RequestTimedOut, "Request has reached maximum retries.");
-							// return null;
-						}
+
+                        /* Not good, we got a response from somebody other then who we requested a response from */
+                        retry++;
+                        if (retry > retries)
+                        {
+                            throw new SnmpException(SnmpException.RequestTimedOut, "Request has reached maximum retries.");
+                            // return null;
+                        }
 					}
 					else
 					{
@@ -596,5 +715,27 @@ namespace SnmpSharpNet
 				_socket = null;
 			}
 		}
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        ProtocolType _UsedProtocol = ProtocolType.Udp;
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        public ProtocolType UsedProtocol
+        {
+            get { return _UsedProtocol; }
+            set 
+            { 
+                _UsedProtocol = value;
+
+                //reopen socket because anther protocol is needed
+                Close();
+                initSocket(_isIPv6);
+            }
+        }
+
 	}
 }

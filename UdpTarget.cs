@@ -92,6 +92,7 @@ namespace SnmpSharpNet
 			get { return _retry; }
 			set { _retry = value; }
 		}
+         
 		/// <summary>
 		/// Constructor.
 		/// </summary>

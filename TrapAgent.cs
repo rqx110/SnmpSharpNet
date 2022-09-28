@@ -40,6 +40,21 @@ namespace SnmpSharpNet
 		/// Internal Socket class
 		/// </summary>
 		protected Socket _sock;
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        ProtocolType _UsedProtocol = ProtocolType.Udp;
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        public ProtocolType UsedProtocol
+        {
+            get { return _UsedProtocol; }
+            set { _UsedProtocol = value; }
+        }
+
 		/// <summary>
 		/// Constructor.
 		/// </summary>
@@ -49,7 +64,18 @@ namespace SnmpSharpNet
 		/// </remarks>
 		public TrapAgent()
 		{
-			_sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                _sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            }
+            else if (_UsedProtocol == ProtocolType.Tcp)
+            {
+                _sock = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            }
+            else
+            {
+                throw new SnmpException("Invalid protocol type (UDP/TCP)");
+            }
 			_sock.Bind(new IPEndPoint(IPAddress.Any, 0));
 		}
 		/// <summary>

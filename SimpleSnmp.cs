@@ -51,7 +51,7 @@ namespace SnmpSharpNet
 		/// <summary>
 		/// Target class
 		/// </summary>
-		protected UdpTarget _target;
+		protected UdpTarget _target = null;
 		/// <summary>
 		/// Timeout value in milliseconds
 		/// </summary>
@@ -77,7 +77,102 @@ namespace SnmpSharpNet
 		/// return null on errors regardless of what the error is.
 		/// </summary>
 		protected bool _suppressExceptions = true;
-		/// <summary>Constructor.</summary>
+
+
+        #region SNMPV3
+
+        /// <summary>
+        /// security name for SNMPV3 requests
+        /// </summary>
+        protected string _securityName = "";
+        //protected string _securityName = "administrator";
+
+        protected AuthenticationDigests _authDigests = AuthenticationDigests.None;
+        //protected AuthenticationDigests _authDigests = AuthenticationDigests.MD5;
+
+        protected string _authSecret = "";
+        //protected string _authSecret = "seppdudepp";
+
+        protected PrivacyProtocols _privProtocols = PrivacyProtocols.None;
+
+        protected string _privSecret = "";
+
+        protected string _contextName = "";
+
+        private SecureAgentParameters _secparam;
+
+        public void ConfigureSNMPV3(string SecurityName,
+            AuthenticationDigests authDigests, string AuthSecret,
+            PrivacyProtocols PrivProtocols, string PrivSecret, string ContextName)
+        {
+            _securityName = SecurityName;
+            _authDigests = authDigests;
+            _authSecret = AuthSecret;
+            _privProtocols = PrivProtocols;
+            _privSecret = PrivSecret;
+            _contextName = ContextName;
+
+            if (_secparam == null)
+                return;
+
+            // force
+            if (_authDigests == AuthenticationDigests.None && _privProtocols == PrivacyProtocols.None)
+                _secparam.noAuthNoPriv(_securityName);
+            else if (_privProtocols == PrivacyProtocols.None)
+                _secparam.authNoPriv(_securityName, _authDigests, _authSecret);
+            else
+                _secparam.authPriv(_securityName, _authDigests, _authSecret, _privProtocols, _privSecret);
+
+            _secparam.ContextName.Set(_contextName);
+        }
+
+
+        /// <summary>
+        /// discovers and prepares the SNMPV3 secure parameters needed for a secure request
+        /// </summary>
+        /// <returns>SecureAgentParameters to comunicate with the device</returns>
+        private SecureAgentParameters _DiscoverAndPrepareSecureParameters()
+        {
+            if (_target == null)
+                return null;
+
+            if (_secparam != null)
+                return _secparam;
+
+            _secparam = new SecureAgentParameters();
+            if (!_target.Discovery(_secparam))
+            {
+                if (!_suppressExceptions)
+                {
+                    //TODO - report error details
+                    throw new SnmpException("unable to discovery SNMP-V3 secure parameters");
+                }
+                _secparam = null;
+
+                return null;
+            }
+
+            if (_authDigests == AuthenticationDigests.None && _privProtocols == PrivacyProtocols.None)
+            {
+                _secparam.noAuthNoPriv(_securityName);
+            }
+            else if (_privProtocols == PrivacyProtocols.None)
+            {
+                _secparam.authNoPriv(_securityName, _authDigests, _authSecret);
+            }
+            else
+            {
+                _secparam.authPriv(_securityName, _authDigests, _authSecret, _privProtocols, _privSecret);
+            }
+
+            _secparam.ContextName.Set(_contextName);
+
+            return _secparam;
+        }
+
+        #endregion
+
+        /// <summary>Constructor.</summary>
 		/// <remarks>
 		/// Class is initialized to default values. Peer IP address is set to loopback, peer port number
 		/// to 161, timeout to 2000 ms (2 seconds), retry count to 2 and community name to public.
@@ -204,18 +299,22 @@ namespace SnmpSharpNet
 				}
 				return null; // class is not fully initialized.
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
-			{
-				if (!_suppressExceptions)
-				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
-				}
-				return null;
-			}
+            // function only works on SNMP version 1, 2 and SNMP version 3 requests
+            if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
+            {
+                if (!_suppressExceptions)
+                {
+                    throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1,2 and 3 only.");
+                }
+                return null;
+            }
 			try
 			{
-				_target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                if (_target == null)
+                {
+                    _target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                    _target.UsedProtocol = _UsedProtocol;                               //define which protocol shall be used (TCP or UDP)
+                }
 			}
 			catch( Exception ex )
 			{
@@ -229,73 +328,145 @@ namespace SnmpSharpNet
 			{
 				return null;
 			}
+
 			try
 			{
-				AgentParameters param = new AgentParameters(version, new OctetString(_community));
+                IAgentParameters param;
+                if (version == SnmpVersion.Ver3)
+                {
+                    //for version 3, discover and prepare the secure parameters first
+                    param = _DiscoverAndPrepareSecureParameters();
+                }
+                else
+                {
+                    /*AgentParameters*/
+                    param = new AgentParameters(version, new OctetString(_community));
+                }
+				
 				SnmpPacket result = _target.Request(pdu, param);
-				if (result != null)
-				{
-					if (result.Pdu.ErrorStatus == 0)
-					{
-						Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
-						foreach (Vb v in result.Pdu.VbList)
-						{
-							if (version == SnmpVersion.Ver2 && (v.Value.Type == SnmpConstants.SMI_NOSUCHINSTANCE ||
-								v.Value.Type == SnmpConstants.SMI_NOSUCHOBJECT))
-							{
-								if (!res.ContainsKey(v.Oid))
-								{
-									res.Add(v.Oid, new Null());
-								}
-								else
-								{
-									res.Add(Oid.NullOid(), v.Value);
-								}		
-							}
-							else
-							{
-								if (!res.ContainsKey(v.Oid))
-								{
-									res.Add(v.Oid, v.Value);
-								}
-								else
-								{
-									if (res[v.Oid].Type == v.Value.Type)
-									{
-										res[v.Oid] = v.Value; // update value of the existing Oid entry
-									}
-									else
-									{
-										throw new SnmpException(SnmpException.OidValueTypeChanged, String.Format("Value type changed from {0} to {1}", res[v.Oid].Type, v.Value.Type));
-									}
-								}
-							}
-						}
-						_target.Close();
-						_target = null;
-						return res;
-					}
-					else 
-					{
-						if (!_suppressExceptions)
-						{
-							throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
-						}
-					}
-				}
-			}
+                if (result != null)
+                {
+                    Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
+
+                    if (version == SnmpVersion.Ver1 || version == SnmpVersion.Ver2)
+                    {
+                        if (result.Pdu.ErrorStatus == 0)
+                        {
+                            foreach (Vb v in result.Pdu.VbList)
+                            {
+                                if (version == SnmpVersion.Ver2 && (v.Value.Type == SnmpConstants.SMI_NOSUCHINSTANCE ||
+                                    v.Value.Type == SnmpConstants.SMI_NOSUCHOBJECT))
+                                {
+                                    if (!res.ContainsKey(v.Oid))
+                                    {
+                                        res.Add(v.Oid, new Null());
+                                    }
+                                    else
+                                    {
+                                        res.Add(Oid.NullOid(), v.Value);
+                                    }
+                                }
+                                else
+                                {
+                                    if (!res.ContainsKey(v.Oid))
+                                    {
+                                        res.Add(v.Oid, v.Value);
+                                    }
+                                    else
+                                    {
+                                        if (res[v.Oid].Type == v.Value.Type)
+                                        {
+                                            res[v.Oid] = v.Value; // update value of the existing Oid entry
+                                        }
+                                        else
+                                        {
+                                            throw new SnmpException(SnmpException.OidValueTypeChanged, String.Format("Value type changed from {0} to {1}", res[v.Oid].Type, v.Value.Type));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (!_suppressExceptions)
+                            {
+                                throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
+                            }
+                        }
+                    }
+                    else if (version == SnmpVersion.Ver3)
+                    {
+                        if (((SnmpV3Packet)result).ScopedPdu.Type == PduType.Report)
+                        {
+                            //TODO - check what to do here
+
+                            System.Diagnostics.Debug.WriteLine("SNMPv3 report:");
+                            foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                            {
+                                System.Diagnostics.Debug.WriteLine(string.Format("{0} -> ({1}) {2}",
+                                  v.Oid.ToString(),
+                                  SnmpConstants.GetTypeName(v.Value.Type), v.Value.ToString()));
+                            }
+                        }
+                        else
+                        {
+                            if (((SnmpV3Packet)result).ScopedPdu.ErrorStatus == 0)
+                            {
+                                foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                                {
+                                    if (!res.ContainsKey(v.Oid))
+                                    {
+                                        res.Add(v.Oid, v.Value);
+                                    }
+                                    else
+                                    {
+                                        if (res[v.Oid].Type == v.Value.Type)
+                                        {
+                                            res[v.Oid] = v.Value; // update value of the existing Oid entry
+                                        }
+                                        else
+                                        {
+                                            throw new SnmpException(SnmpException.OidValueTypeChanged, String.Format("Value type changed from {0} to {1}", res[v.Oid].Type, v.Value.Type));
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (!_suppressExceptions)
+                                {
+                                    throw new SnmpErrorStatusException("Agent responded with an error", ((SnmpV3Packet)result).ScopedPdu.ErrorStatus, ((SnmpV3Packet)result).ScopedPdu.ErrorIndex);
+                                }
+                            }
+                        }
+                    }
+
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
+                    return res;
+                }
+            }
 			catch( Exception ex )
 			{
 				if( ! _suppressExceptions ) 
 				{
-					_target.Close();
-					_target = null;
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
 					throw ex;
 				}
 			}
-			_target.Close();
-			_target = null;
-			return null;
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                _target.Close();
+                _target = null;
+            }
+            return null;
 		}
 
 		/// <summary>
@@ -335,12 +506,12 @@ namespace SnmpSharpNet
 				}
 				return null;
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
+			// function only works on SNMP version 1, 2 and SNMP version 3 requests
+			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
 			{
 				if (!_suppressExceptions)
 				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
+					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1, 2 and 3 only.");
 				}
 				return null;
 			}
@@ -393,18 +564,22 @@ namespace SnmpSharpNet
 				}
 				return null; // class is not fully initialized.
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
-			{
-				if (!_suppressExceptions)
-				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
-				}
-				return null;
-			}
+            // function only works on SNMP version 1, 2 and SNMP version 3 requests
+            if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
+            {
+                if (!_suppressExceptions)
+                {
+                    throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1,2 and 3 only.");
+                }
+                return null;
+            }
 			try
 			{
-				_target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                if (_target == null /*|| _UsedProtocol == ProtocolType.Udp*/)
+                {
+                    _target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                    _target.UsedProtocol = _UsedProtocol;   //define which protocol shall be used (TCP or UDP)
+                }
 			}
 			catch
 			{
@@ -416,62 +591,140 @@ namespace SnmpSharpNet
 			}
 			try
 			{
-				AgentParameters param = new AgentParameters(version, new OctetString(_community));
-				SnmpPacket result = _target.Request(pdu, param);
-				if (result != null)
-				{
-					if (result.Pdu.ErrorStatus == 0)
-					{
-						Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
-						foreach (Vb v in result.Pdu.VbList)
-						{
-							if (version == SnmpVersion.Ver2 &&
-								(v.Value.Type == SnmpConstants.SMI_ENDOFMIBVIEW) ||
-								(v.Value.Type == SnmpConstants.SMI_NOSUCHINSTANCE) ||
-								(v.Value.Type == SnmpConstants.SMI_NOSUCHOBJECT))
-							{
-								break;
-							}
-							if (res.ContainsKey(v.Oid))
-							{
-								if (res[v.Oid].Type != v.Value.Type)
-								{
-									throw new SnmpException(SnmpException.OidValueTypeChanged, "OID value type changed for OID: " + v.Oid.ToString());
-								}
-								else
-								{
-									res[v.Oid] = v.Value;
-								}
-							}
-							else
-							{
-								res.Add(v.Oid, v.Value);
-							}
-						}
-						_target.Close();
-						_target = null;
-						return res;
-					}
-					else
-					{
-						if( ! _suppressExceptions )
-						{
-							throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
-						}
-					}
-				}
+                IAgentParameters param;
+                if (version == SnmpVersion.Ver3)
+                {
+                    //for version 3, discover and prepare the secure parameters first
+                    param = _DiscoverAndPrepareSecureParameters();
+                }
+                else
+                {
+                    /*AgentParameters*/
+                    param = new AgentParameters(version, new OctetString(_community));
+                }
+
+                SnmpPacket result = _target.Request(pdu, param);
+                if (result != null)
+                {
+                    Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
+
+                    if (version == SnmpVersion.Ver1 || version == SnmpVersion.Ver2)
+                    {
+                        if (result.Pdu.ErrorStatus == 0)
+                        {
+                            foreach (Vb v in result.Pdu.VbList)
+                            {
+                                if (version == SnmpVersion.Ver2 &&
+                                    (v.Value.Type == SnmpConstants.SMI_ENDOFMIBVIEW) ||
+                                    (v.Value.Type == SnmpConstants.SMI_NOSUCHINSTANCE) ||
+                                    (v.Value.Type == SnmpConstants.SMI_NOSUCHOBJECT))
+                                {
+                                    break;
+                                }
+                                if (res.ContainsKey(v.Oid))
+                                {
+                                    if (res[v.Oid].Type != v.Value.Type)
+                                    {
+                                        throw new SnmpException(SnmpException.OidValueTypeChanged, "OID value type changed for OID: " + v.Oid.ToString());
+                                    }
+                                    else
+                                    {
+                                        res[v.Oid] = v.Value;
+                                    }
+                                }
+                                else
+                                {
+                                    res.Add(v.Oid, v.Value);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (!_suppressExceptions)
+                            {
+                                throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
+                            }
+                        }
+                    }
+                    else if (version == SnmpVersion.Ver3)
+                    {
+                        if (((SnmpV3Packet)result).ScopedPdu.Type == PduType.Report)
+                        {
+                            //TODO - check what to do here
+
+                            System.Diagnostics.Debug.WriteLine("SNMPv3 report:");
+                            foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                            {
+                                System.Diagnostics.Debug.WriteLine(string.Format("{0} -> ({1}) {2}",
+                                  v.Oid.ToString(),
+                                  SnmpConstants.GetTypeName(v.Value.Type), v.Value.ToString()));
+                            }
+                        }
+                        else
+                        {
+                            if (((SnmpV3Packet)result).ScopedPdu.ErrorStatus == 0)
+                            {
+                                foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                                {
+                                    if ((v.Value.Type == SnmpConstants.SMI_ENDOFMIBVIEW) ||
+                                    (v.Value.Type == SnmpConstants.SMI_NOSUCHINSTANCE) ||
+                                    (v.Value.Type == SnmpConstants.SMI_NOSUCHOBJECT))
+                                    {
+                                        break;
+                                    }
+
+                                    if (res.ContainsKey(v.Oid))
+                                    {
+                                        if (res[v.Oid].Type != v.Value.Type)
+                                        {
+                                            throw new SnmpException(SnmpException.OidValueTypeChanged, "OID value type changed for OID: " + v.Oid.ToString());
+                                        }
+                                        else
+                                        {
+                                            res[v.Oid] = v.Value;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        res.Add(v.Oid, v.Value);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (!_suppressExceptions)
+                                {
+                                    throw new SnmpErrorStatusException("Agent responded with an error", ((SnmpV3Packet)result).ScopedPdu.ErrorStatus, ((SnmpV3Packet)result).ScopedPdu.ErrorIndex);
+                                }
+                            }
+                        }
+                    }
+
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
+                    return res;
+                }
 			}
 			catch( Exception ex )
 			{
 				if (!_suppressExceptions)
 				{
-					_target.Close();
-					_target = null;
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
 					throw ex;
 				}
 			}
-			_target.Close();
-			_target = null;
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                _target.Close();
+                _target = null;
+            }
 			return null;
 		}
 
@@ -512,15 +765,15 @@ namespace SnmpSharpNet
 				}
 				return null;
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
-			{
-				if (!_suppressExceptions)
-				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
-				}
-				return null;
-			}
+            // function only works on SNMP version 1, 2 and SNMP version 3 requests
+            if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
+            {
+                if (!_suppressExceptions)
+                {
+                    throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1,2 and 3 only.");
+                }
+                return null;
+            }
 			Pdu pdu = new Pdu(PduType.GetNext);
 			foreach (string s in oidList)
 			{
@@ -590,7 +843,11 @@ namespace SnmpSharpNet
 			{
 				pdu.NonRepeaters = _nonRepeaters;
 				pdu.MaxRepetitions = _maxRepetitions;
-				_target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                if (_target == null /*|| _UsedProtocol == ProtocolType.Udp*/)
+                {
+                    _target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                    _target.UsedProtocol = _UsedProtocol;   //define which protocol shall be used (TCP or UDP)
+                }
 			}
 			catch(Exception ex)
 			{
@@ -639,8 +896,11 @@ namespace SnmpSharpNet
 								res.Add(v.Oid, v.Value);
 							}
 						}
-						_target.Close();
-						_target = null;
+                        if (_UsedProtocol == ProtocolType.Udp)
+                        {
+                            _target.Close();
+                            _target = null;
+                        }
 						return res;
 					}
 					else
@@ -656,13 +916,19 @@ namespace SnmpSharpNet
 			{
 				if( ! _suppressExceptions )
 				{
-					_target.Close();
-					_target = null;
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
 					throw ex;
 				}
 			}
-			_target.Close();
-			_target = null;
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                _target.Close();
+                _target = null;
+            }
 			return null;
 		}
 
@@ -749,18 +1015,22 @@ namespace SnmpSharpNet
 				}
 				return null; // class is not fully initialized.
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
-			{
-				if (!_suppressExceptions)
-				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
-				}
-				return null;
-			}
+            // function only works on SNMP version 1, 2 and SNMP version 3 requests
+            if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
+            {
+                if (!_suppressExceptions)
+                {
+                    throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1,2 and 3 only.");
+                }
+                return null;
+            }
 			try
 			{
-				_target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                if (_target == null)
+                {
+                    _target = new UdpTarget(_peerIP, _peerPort, _timeout, _retry);
+                    _target.UsedProtocol = _UsedProtocol;   //define which protocol shall be used (TCP or UDP)
+                }
 			}
 			catch(Exception ex)
 			{
@@ -775,55 +1045,127 @@ namespace SnmpSharpNet
 				return null;
 			}
 			try {
-				AgentParameters param = new AgentParameters(version, new OctetString(_community));
+
+                IAgentParameters param;
+                if (version == SnmpVersion.Ver3)
+                {
+                    //for version 3, discover and prepare the secure parameters first
+                    param = _DiscoverAndPrepareSecureParameters();
+                }
+                else
+                {
+                    /*AgentParameters*/
+                    param = new AgentParameters(version, new OctetString(_community));
+                }
+
 				SnmpPacket result = _target.Request(pdu, param);
-				if (result != null)
-				{
-					if (result.Pdu.ErrorStatus == 0)
-					{
-						Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
-						foreach (Vb v in result.Pdu.VbList)
-						{
-							if (res.ContainsKey(v.Oid))
-							{
-								if (res[v.Oid].Type != v.Value.Type)
-								{
-									throw new SnmpException(SnmpException.OidValueTypeChanged, "OID value type changed for OID: " + v.Oid.ToString());
-								}
-								else
-								{
-									res[v.Oid] = v.Value;
-								}
-							}
-							else
-							{
-								res.Add(v.Oid, v.Value);
-							}
-						}
-						_target.Close();
-						_target = null;
-						return res;
-					}
-					else
-					{
-						if( ! _suppressExceptions )
-						{
-							throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
-						}
-					}
-				}
+                if (result != null)
+                {
+                    Dictionary<Oid, AsnType> res = new Dictionary<Oid, AsnType>();
+
+                    if (version == SnmpVersion.Ver1 || version == SnmpVersion.Ver2)
+                    {
+                        if (result.Pdu.ErrorStatus == 0)
+                        {
+                            foreach (Vb v in result.Pdu.VbList)
+                            {
+                                if (res.ContainsKey(v.Oid))
+                                {
+                                    if (res[v.Oid].Type != v.Value.Type)
+                                    {
+                                        throw new SnmpException(SnmpException.OidValueTypeChanged, "OID value type changed for OID: " + v.Oid.ToString());
+                                    }
+                                    else
+                                    {
+                                        res[v.Oid] = v.Value;
+                                    }
+                                }
+                                else
+                                {
+                                    res.Add(v.Oid, v.Value);
+                                }
+                            }
+                            
+                        }
+                        else
+                        {
+                            if (!_suppressExceptions)
+                            {
+                                throw new SnmpErrorStatusException("Agent responded with an error", result.Pdu.ErrorStatus, result.Pdu.ErrorIndex);
+                            }
+                        }
+                    }
+                    else if (version == SnmpVersion.Ver3)
+                    {
+                        if (((SnmpV3Packet)result).ScopedPdu.Type == PduType.Report)
+                        {
+                            //TODO - check what to do here
+
+                            System.Diagnostics.Debug.WriteLine("SNMPv3 report:");
+                            foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                            {
+                                System.Diagnostics.Debug.WriteLine(string.Format("{0} -> ({1}) {2}",
+                                  v.Oid.ToString(),
+                                  SnmpConstants.GetTypeName(v.Value.Type), v.Value.ToString()));
+                            }
+                        }
+                        else
+                        {
+                            if (((SnmpV3Packet)result).ScopedPdu.ErrorStatus == 0)
+                            {
+                                foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
+                                {
+                                    if (!res.ContainsKey(v.Oid))
+                                    {
+                                        res.Add(v.Oid, v.Value);
+                                    }
+                                    else
+                                    {
+                                        if (res[v.Oid].Type == v.Value.Type)
+                                        {
+                                            res[v.Oid] = v.Value; // update value of the existing Oid entry
+                                        }
+                                        else
+                                        {
+                                            throw new SnmpException(SnmpException.OidValueTypeChanged, String.Format("Value type changed from {0} to {1}", res[v.Oid].Type, v.Value.Type));
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (!_suppressExceptions)
+                                {
+                                    throw new SnmpErrorStatusException("Agent responded with an error", ((SnmpV3Packet)result).ScopedPdu.ErrorStatus, ((SnmpV3Packet)result).ScopedPdu.ErrorIndex);
+                                }
+                            }
+                        }
+                    }
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
+                    return res;
+                }
 			}
 			catch(Exception ex)
 			{
 				if( ! _suppressExceptions )
 				{
-					_target.Close();
-					_target = null;
+                    if (_UsedProtocol == ProtocolType.Udp)
+                    {
+                        _target.Close();
+                        _target = null;
+                    }
 					throw ex;
 				}
 			}
-			_target.Close();
-			_target = null;
+            if (_UsedProtocol == ProtocolType.Udp)
+            {
+                _target.Close();
+                _target = null;
+            }
 			return null;
 		}
 
@@ -863,15 +1205,15 @@ namespace SnmpSharpNet
 				}
 				return null;
 			}
-			// function only works on SNMP version 1 and SNMP version 2 requests
-			if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2)
-			{
-				if (!_suppressExceptions)
-				{
-					throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1 and 2 only.");
-				}
-				return null;
-			}
+            // function only works on SNMP version 1, 2 and SNMP version 3 requests
+            if (version != SnmpVersion.Ver1 && version != SnmpVersion.Ver2 && version != SnmpVersion.Ver3)
+            {
+                if (!_suppressExceptions)
+                {
+                    throw new SnmpInvalidVersionException("SimpleSnmp support SNMP version 1,2 and 3 only.");
+                }
+                return null;
+            }
 			Pdu pdu = new Pdu(PduType.Set);
 			foreach (Vb vb in vbs)
 			{
@@ -966,10 +1308,10 @@ namespace SnmpSharpNet
 					val = GetBulk(new string[] { lastOid.ToString() });
 				}
 				// check that we have a result
-				if (val == null || val.Count == 0)
+				if (val == null)
 				{
 					// error of some sort happened. abort...
-					break;
+					return null;
 				}
 				foreach (KeyValuePair<Oid, AsnType> entry in val)
 				{
@@ -1000,6 +1342,20 @@ namespace SnmpSharpNet
 			}
 			return result;
 		}
+
+        /// <summary>
+        /// Closes the connection
+        /// </summary>
+        public void CloseConnection()
+        {
+            if (_target != null)
+            {
+                _target.Close();
+                _target = null;
+            }
+
+            _secparam = null;   //SNMPV3 parameters have to be refreshed
+        }
 
 		#region Properties
 
@@ -1148,6 +1504,25 @@ namespace SnmpSharpNet
 			}
 		}
 
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        ProtocolType _UsedProtocol = ProtocolType.Udp;
+
+        /// <summary>
+        /// Protocol used to transmit SNMP data (Udp or Tcp)
+        /// </summary>
+        public ProtocolType UsedProtocol
+        {
+            get { return _UsedProtocol; }
+            set 
+            { 
+                _UsedProtocol = value;
+                if (_target != null)
+                    _target.UsedProtocol = value;
+            }
+        }
 
 		#endregion
 	}
