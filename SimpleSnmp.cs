@@ -85,23 +85,41 @@ namespace SnmpSharpNet
         /// security name for SNMPV3 requests
         /// </summary>
         protected string _securityName = "";
-        //protected string _securityName = "administrator";
-
+		/// <summary>
+		/// the authentication protocol used for SNMPV3
+		/// </summary>
         protected AuthenticationDigests _authDigests = AuthenticationDigests.None;
-        //protected AuthenticationDigests _authDigests = AuthenticationDigests.MD5;
-
+		/// <summary>
+		/// the authentication password
+		/// </summary>
         protected string _authSecret = "";
-        //protected string _authSecret = "seppdudepp";
-
+		/// <summary>
+		/// the privacy protocol used for SNMPV3
+		/// </summary>
         protected PrivacyProtocols _privProtocols = PrivacyProtocols.None;
-
+		/// <summary>
+		/// the privacy password
+		/// </summary>
         protected string _privSecret = "";
-
+		/// <summary>
+		/// the SNMPV3 context name
+		/// </summary>
         protected string _contextName = "";
-
+		/// <summary>
+		/// the SNMPV3 secure parameters
+		/// </summary>
         private SecureAgentParameters _secparam;
 
-        public void ConfigureSNMPV3(string SecurityName,
+		/// <summary>
+		/// used to initialize the SNMPV3 parameters
+		/// </summary>
+		/// <param name="SecurityName">security name for SNMPV3 requests</param>
+		/// <param name="authDigests">the authentication protocol used for SNMPV3</param>
+		/// <param name="AuthSecret">the authentication password</param>
+		/// <param name="PrivProtocols">the privacy protocol used for SNMPV3</param>
+		/// <param name="PrivSecret">the privacy password</param>
+		/// <param name="ContextName">the SNMPV3 context name</param>
+		public void ConfigureSNMPV3(string SecurityName,
             AuthenticationDigests authDigests, string AuthSecret,
             PrivacyProtocols PrivProtocols, string PrivSecret, string ContextName)
         {
