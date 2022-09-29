@@ -152,8 +152,6 @@ namespace SnmpSharpNet
 			_socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReceiveTimeout, timeout);
 			int recv = 0;
 			int retry = 0;
-            bool retryWithoutSend = false;
-
 			byte[] inbuffer = new byte[64 * 1024];
 
             EndPoint remote = null;
@@ -177,28 +175,10 @@ namespace SnmpSharpNet
 			{
 				try
 				{
-                    if (retryWithoutSend == false)  //don't send the stream in case the retry procedure expects another response
-                    {
-                        _socket.SendTo(buffer, bufferLength, SocketFlags.None, (EndPoint)netPeer);
-                    }
-                    retryWithoutSend = false;
+					_socket.SendTo(buffer, bufferLength, SocketFlags.None, (EndPoint)netPeer);
 
-                    //initial read
-                    recv = _socket.ReceiveFrom(inbuffer, ref remote);
-
-
-                    //can be usefull for very big packages, but will not do this now because it is so ugly (C. Wieand) 
-
-                    //if(bufferLength > 20000 && bufferLength > recv)
-                    //{
-                    //    System.Threading.Thread.Sleep(100);
-                    //}
-                    ////more data available
-                    //while (_socket.Available > 0)
-                    //{
-                    //    recv += _socket.ReceiveFrom(inbuffer, recv, inbuffer.Length - recv, SocketFlags.None, ref remote);
-                    //}
-
+					//initial read
+					recv = _socket.ReceiveFrom(inbuffer, ref remote);
 				}
 				catch (SocketException ex)
 				{
@@ -241,61 +221,6 @@ namespace SnmpSharpNet
 				}
 				if (recv > 0)
 				{
-                    //it is possible that a trap was received and the expected response will be received after this ...
-                    try
-                    {
-                        bool bIsTrap = false;
-
-                        // Check protocol version int 
-                        int ver = SnmpPacket.GetProtocolVersion(inbuffer, recv);
-                        if (ver == (int)SnmpVersion.Ver1)
-                        {
-                            // Parse SNMP Version 1 TRAP packet 
-                            SnmpV1TrapPacket pkt = new SnmpV1TrapPacket();
-                            pkt.decode(inbuffer, recv);
-                            
-                            //if we are here, the packet is a trap
-                            bIsTrap = true;
-                        }
-                        else if(ver == (int)SnmpVersion.Ver2)
-                        {
-                            // Parse SNMP Version 2 TRAP packet 
-                            SnmpV2Packet pkt = new SnmpV2Packet();
-                            pkt.decode(inbuffer, recv);
-
-                            if (pkt.Pdu.Type == PduType.V2Trap) 
-                            {
-                                //if we are here it is a V2Packet
-                                bIsTrap = true;
-                            }
-                        }
-                        else if (ver == (int)SnmpVersion.Ver3)
-                        {
-                            //TODO - evalute if the response is a v3 trap 
-
-                        }
-
-                        if (bIsTrap)
-                        {
-                            //we received a trap, don't use this as a answer!
-
-                            //let's try to wait for another response without sending the request again
-                            retryWithoutSend = true;
-
-                            //continue to receive
-                            continue;
-                        }
-                    }
-                    catch (Exception)
-                    {
-                        //it is no trap!
-                        retryWithoutSend = false;
-                    }
-
-                    //it is no trap!
-                    retryWithoutSend = false;
-
-
 					IPEndPoint remEP = remote as IPEndPoint;
 					if ( ! _noSourceCheck && ! remEP.Equals(netPeer))
 					{
