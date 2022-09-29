@@ -299,7 +299,7 @@ namespace SnmpSharpNet
 					IPEndPoint remEP = remote as IPEndPoint;
 					if ( ! _noSourceCheck && ! remEP.Equals(netPeer))
 					{
-                        if (remEP.Address.Equals(netPeer.Address) == false)
+                        if (!remEP.Address.Equals(netPeer.Address))
                         {
                             Console.WriteLine("Address miss-match {0} != {1}", remEP.Address, netPeer.Address);
                         }
