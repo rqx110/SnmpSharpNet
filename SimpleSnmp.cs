@@ -113,22 +113,22 @@ namespace SnmpSharpNet
 		/// <summary>
 		/// used to initialize the SNMPV3 parameters
 		/// </summary>
-		/// <param name="SecurityName">security name for SNMPV3 requests</param>
+		/// <param name="securityName">security name for SNMPV3 requests</param>
 		/// <param name="authDigests">the authentication protocol used for SNMPV3</param>
-		/// <param name="AuthSecret">the authentication password</param>
-		/// <param name="PrivProtocols">the privacy protocol used for SNMPV3</param>
-		/// <param name="PrivSecret">the privacy password</param>
-		/// <param name="ContextName">the SNMPV3 context name</param>
-		public void ConfigureSNMPV3(string SecurityName,
-            AuthenticationDigests authDigests, string AuthSecret,
-            PrivacyProtocols PrivProtocols, string PrivSecret, string ContextName)
+		/// <param name="authSecret">the authentication password</param>
+		/// <param name="privProtocols">the privacy protocol used for SNMPV3</param>
+		/// <param name="privSecret">the privacy password</param>
+		/// <param name="contextName">the SNMPV3 context name</param>
+		public void ConfigureSNMPV3(string securityName,
+            AuthenticationDigests authDigests, string authSecret,
+            PrivacyProtocols privProtocols, string privSecret, string contextName)
         {
-            _securityName = SecurityName;
+            _securityName = securityName;
             _authDigests = authDigests;
-            _authSecret = AuthSecret;
-            _privProtocols = PrivProtocols;
-            _privSecret = PrivSecret;
-            _contextName = ContextName;
+            _authSecret = authSecret;
+            _privProtocols = privProtocols;
+            _privSecret = privSecret;
+            _contextName = contextName;
 
             if (_secparam == null)
                 return;
@@ -160,13 +160,13 @@ namespace SnmpSharpNet
             _secparam = new SecureAgentParameters();
             if (!_target.Discovery(_secparam))
             {
-                if (!_suppressExceptions)
+				_secparam = null;
+				_target.Close();
+				if (!_suppressExceptions)
                 {
                     //TODO - report error details
-                    throw new SnmpException("unable to discovery SNMP-V3 secure parameters");
+                    throw new SnmpException("Unable to discover SNMP Version 3 secure parameters.");
                 }
-                _secparam = null;
-
                 return null;
             }
 
@@ -353,8 +353,12 @@ namespace SnmpSharpNet
                 if (version == SnmpVersion.Ver3)
                 {
                     //for version 3, discover and prepare the secure parameters first
-                    param = _DiscoverAndPrepareSecureParameters();
-                }
+                    param = DiscoverAndPrepareSecureParameters();
+					if (param == null)
+					{
+						throw new Exception("SNMPV3 discovery process failed.");
+					}
+				}
                 else
                 {
                     /*AgentParameters*/
@@ -416,8 +420,6 @@ namespace SnmpSharpNet
                     {
                         if (((SnmpV3Packet)result).ScopedPdu.Type == PduType.Report)
                         {
-                            //TODO - check what to do here
-
                             System.Diagnostics.Debug.WriteLine("SNMPv3 report:");
                             foreach (Vb v in ((SnmpV3Packet)result).ScopedPdu.VbList)
                             {
@@ -425,6 +427,8 @@ namespace SnmpSharpNet
                                   v.Oid.ToString(),
                                   SnmpConstants.GetTypeName(v.Value.Type), v.Value.ToString()));
                             }
+
+							throw new SnmpException(SnmpException.ReportOnNoReports, "Received unexpected report response.");
                         }
                         else
                         {
@@ -613,7 +617,11 @@ namespace SnmpSharpNet
                 if (version == SnmpVersion.Ver3)
                 {
                     //for version 3, discover and prepare the secure parameters first
-                    param = _DiscoverAndPrepareSecureParameters();
+                    param = DiscoverAndPrepareSecureParameters();
+					if(param == null)
+                    {
+						throw new Exception("SNMPV3 discovery process failed.");
+					}
                 }
                 else
                 {
@@ -1068,8 +1076,12 @@ namespace SnmpSharpNet
                 if (version == SnmpVersion.Ver3)
                 {
                     //for version 3, discover and prepare the secure parameters first
-                    param = _DiscoverAndPrepareSecureParameters();
-                }
+                    param = DiscoverAndPrepareSecureParameters();
+					if (param == null)
+					{
+						throw new Exception("SNMPV3 discovery process failed.");
+					}
+				}
                 else
                 {
                     /*AgentParameters*/
@@ -1326,10 +1338,10 @@ namespace SnmpSharpNet
 					val = GetBulk(new string[] { lastOid.ToString() });
 				}
 				// check that we have a result
-				if (val == null)
+				if (val == null || val.Count == 0)
 				{
 					// error of some sort happened. abort...
-					return null;
+					break;
 				}
 				foreach (KeyValuePair<Oid, AsnType> entry in val)
 				{

@@ -173,7 +173,7 @@ namespace SnmpSharpNet
             {
                 throw new SnmpException("Invalid protocol type (UDP/TCP)");
             }
-			while (true)
+            while (true)
 			{
 				try
 				{
@@ -730,9 +730,7 @@ namespace SnmpSharpNet
             set 
             { 
                 _UsedProtocol = value;
-
                 //reopen socket because anther protocol is needed
-                Close();
                 initSocket(_isIPv6);
             }
         }
