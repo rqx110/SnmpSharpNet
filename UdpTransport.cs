@@ -157,7 +157,7 @@ namespace SnmpSharpNet
             EndPoint remote = null;
             if (_UsedProtocol == ProtocolType.Udp)
             {
-                remote = (EndPoint)new IPEndPoint(peer.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0);
+                remote = (EndPoint)new IPEndPoint(peer.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, port);
             }
             else if (_UsedProtocol == ProtocolType.Tcp)
             {
