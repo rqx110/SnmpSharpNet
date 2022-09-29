@@ -149,7 +149,7 @@ namespace SnmpSharpNet
         /// discovers and prepares the SNMPV3 secure parameters needed for a secure request
         /// </summary>
         /// <returns>SecureAgentParameters to comunicate with the device</returns>
-        private SecureAgentParameters _DiscoverAndPrepareSecureParameters()
+        private SecureAgentParameters DiscoverAndPrepareSecureParameters()
         {
             if (_target == null)
                 return null;
