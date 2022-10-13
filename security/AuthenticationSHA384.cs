@@ -19,17 +19,17 @@ using System.Security.Cryptography;
 namespace SnmpSharpNet
 {
 	/// <summary>
-	/// SHA-1 Authentication class.
+	/// SHA-384 Authentication class.
 	/// </summary>
-	public class AuthenticationSHA1 : IAuthenticationDigest
+	public class AuthenticationSHA384 : IAuthenticationDigest
 	{
-		private const int authenticationLength = 12;
-		private const int digestLength = 20;
+		private const int authenticationLength = 32;
+		private const int digestLength = 48;
 
 		/// <summary>
 		/// Standard constructor.
 		/// </summary>
-		public AuthenticationSHA1()
+		public AuthenticationSHA384()
 		{
 		}
 		/// <summary>
@@ -43,7 +43,7 @@ namespace SnmpSharpNet
 		{
 			byte[] result = new byte[authenticationLength];
 			byte[] authKey = PasswordToKey(authenticationSecret, engineId);
-			HMACSHA1 sha = new HMACSHA1(authKey);
+			HMACSHA384 sha = new HMACSHA384(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			// copy "authentication lenght" bytes of the hash into the wholeMessage
 			for (int i = 0; i < authenticationLength; i++)
@@ -63,7 +63,7 @@ namespace SnmpSharpNet
 		{
 			byte[] result = new byte[authenticationLength];
 
-			HMACSHA1 sha = new HMACSHA1(authKey);
+			HMACSHA384 sha = new HMACSHA384(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			// copy "authentication lenght" bytes of the hash into the wholeMessage
 			for (int i = 0; i < authenticationLength; i++)
@@ -74,7 +74,7 @@ namespace SnmpSharpNet
 			return result;
 		}
 		/// <summary>
-		/// Verifies correct SHA-1 authentication of the frame. Prior to calling this method, you have to extract authentication
+		/// Verifies correct SHA-384 authentication of the frame. Prior to calling this method, you have to extract authentication
 		/// parameters from the wholeMessage and reset authenticationParameters field in the USM information block to 12 0x00
 		/// values.
 		/// </summary>
@@ -86,7 +86,7 @@ namespace SnmpSharpNet
 		public bool authenticateIncomingMsg(byte[] userPassword, byte[] engineId, byte[] authenticationParameters, MutableByte wholeMessage)
 		{
 			byte[] authKey = PasswordToKey(userPassword, engineId);
-			HMACSHA1 sha = new HMACSHA1(authKey);
+			HMACSHA384 sha = new HMACSHA384(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			MutableByte myhash = new MutableByte(hash, authenticationLength);
 			sha.Clear(); // release resources
@@ -97,7 +97,7 @@ namespace SnmpSharpNet
 			return false;
 		}
 		/// <summary>
-		/// Verify SHA-1 authentication of a packet.
+		/// Verify SHA-384 authentication of a packet.
 		/// </summary>
 		/// <param name="authKey">Authentication key (not password)</param>
 		/// <param name="authenticationParameters">Authentication parameters extracted from the packet being authenticated</param>
@@ -105,7 +105,7 @@ namespace SnmpSharpNet
 		/// <returns>True on authentication success, otherwise false</returns>
 		public bool authenticateIncomingMsg(byte[] authKey, byte[] authenticationParameters, MutableByte wholeMessage)
 		{
-			HMACSHA1 sha = new HMACSHA1(authKey);
+			HMACSHA384 sha = new HMACSHA384(authKey);
 			byte[] hash = sha.ComputeHash(wholeMessage);
 			MutableByte myhash = new MutableByte(hash, authenticationLength);
 			sha.Clear(); // release resources
@@ -130,7 +130,7 @@ namespace SnmpSharpNet
 
 			int password_index = 0;
 			int count = 0;
-			SHA1 sha = new SHA1CryptoServiceProvider();
+			SHA384 sha = new SHA384CryptoServiceProvider();
 
 			/* Use while loop until we've done 1 Megabyte */
 			byte[] sourceBuffer = new byte[1048576];
@@ -179,7 +179,7 @@ namespace SnmpSharpNet
 		/// </summary>
 		public string Name
 		{
-			get { return "HMAC-SHA1"; }
+			get { return "HMAC-SHA384"; }
 		}
 		/// <summary>
 		/// Compute hash using authentication protocol.
@@ -190,7 +190,7 @@ namespace SnmpSharpNet
 		/// <returns>Hash value</returns>
 		public byte[] ComputeHash(byte[] data, int offset, int count)
 		{
-			SHA1 sha = new SHA1CryptoServiceProvider();
+			SHA384 sha = new SHA384CryptoServiceProvider();
 			byte[] res = sha.ComputeHash(data, offset, count);
 			sha.Clear();
 			return res;
