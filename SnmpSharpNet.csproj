@@ -1,126 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{8E150D42-5D05-40F8-A388-C3A55EB4A141}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SnmpSharpNet</RootNamespace>
     <AssemblyName>SnmpSharpNet</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+	<TargetFramework>netstandard2.1</TargetFramework>
     <FileAlignment>512</FileAlignment>
-    <FileUpgradeFlags>
-    </FileUpgradeFlags>
-    <UpgradeBackupLocation>
-    </UpgradeBackupLocation>
-    <OldToolsVersion>3.5</OldToolsVersion>
-    <TargetFrameworkProfile />
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>keypair.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\SnmpSharpNet.XML</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\SnmpSharpNet.XML</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AgentParameters.cs" />
-    <Compile Include="AsnType.cs" />
-    <Compile Include="AsyncRequestResult.cs" />
-    <Compile Include="AsyncRequestState.cs" />
-    <Compile Include="PduErrorStatus.cs" />
-    <Compile Include="PduType.cs" />
-    <Compile Include="security\AuthenticationSHA256.cs" />
-    <Compile Include="security\AuthenticationSHA384.cs" />
-    <Compile Include="security\AuthenticationSHA512.cs" />
-    <Compile Include="security\Privacy3DES.cs" />
-    <Compile Include="security\PrivacyAES192.cs" />
-    <Compile Include="security\PrivacyAES256.cs" />
-    <Compile Include="SimpleSnmp.cs" />
-    <Compile Include="SnmpError.cs" />
-    <Compile Include="security\AuthenticationDigests.cs" />
-    <Compile Include="Exception\SnmpAuthenticationException.cs" />
-    <Compile Include="Exception\SnmpDecodingException.cs" />
-    <Compile Include="Exception\SnmpInvalidPduTypeException.cs" />
-    <Compile Include="Exception\SnmpInvalidVersionException.cs" />
-    <Compile Include="Exception\SnmpNetworkException.cs" />
-    <Compile Include="Exception\SnmpPrivacyException.cs" />
-    <Compile Include="IAgentParameters.cs" />
-    <Compile Include="security\PrivacyProtocols.cs" />
-    <Compile Include="SecureAgentParameters.cs" />
-    <Compile Include="SnmpConstants.cs" />
-    <Compile Include="Exception\SnmpException.cs" />
-    <Compile Include="MutableByte.cs" />
-    <Compile Include="Pdu.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Exception\SnmpErrorStatusException.cs" />
-    <Compile Include="SnmpPacket.cs" />
-    <Compile Include="SnmpV1Packet.cs" />
-    <Compile Include="SnmpV1TrapPacket.cs" />
-    <Compile Include="SnmpV2Packet.cs" />
-    <Compile Include="SnmpV3Packet.cs" />
-    <Compile Include="security\AuthenticationMD5.cs" />
-    <Compile Include="security\Authentication.cs" />
-    <Compile Include="security\AuthenticationSHA1.cs" />
-    <Compile Include="security\IAuthenticationDigest.cs" />
-    <Compile Include="security\IPrivacyProtocol.cs" />
-    <Compile Include="security\MsgFlags.cs" />
-    <Compile Include="security\PrivacyAES.cs" />
-    <Compile Include="security\PrivacyAES128.cs" />
-    <Compile Include="security\PrivacyDES.cs" />
-    <Compile Include="security\PrivacyProtocol.cs" />
-    <Compile Include="security\ScopedPdu.cs" />
-    <Compile Include="security\SNMPV3ReportError.cs" />
-    <Compile Include="security\UserSecurityModel.cs" />
-    <Compile Include="SnmpVariableType.cs" />
-    <Compile Include="SnmpVersion.cs" />
-    <Compile Include="TrapAgent.cs" />
-    <Compile Include="TrapPdu.cs" />
-    <Compile Include="Types\Counter32.cs" />
-    <Compile Include="Types\Counter64.cs" />
-    <Compile Include="Types\EndOfMibView.cs" />
-    <Compile Include="Types\EthernetAddress.cs" />
-    <Compile Include="Types\Gauge32.cs" />
-    <Compile Include="Types\Integer32.cs" />
-    <Compile Include="Types\IpAddress.cs" />
-    <Compile Include="Types\NoSuchInstance.cs" />
-    <Compile Include="Types\NoSuchObject.cs" />
-    <Compile Include="Types\Null.cs" />
-    <Compile Include="Types\OctetString.cs" />
-    <Compile Include="Types\Oid.cs" />
-    <Compile Include="Types\Opaque.cs" />
-    <Compile Include="Types\Sequence.cs" />
-    <Compile Include="Types\TimeTicks.cs" />
-    <Compile Include="Types\UInteger32.cs" />
-    <Compile Include="Types\V2Error.cs" />
-    <Compile Include="Types\V2PartyClock.cs" />
-    <Compile Include="UdpTarget.cs" />
-    <Compile Include="UdpTransport.cs" />
-    <Compile Include="Vb.cs" />
-    <Compile Include="VbCollection.cs" />
-  </ItemGroup>
   <ItemGroup>
     <Content Include="CHANGES.txt" />
   </ItemGroup>
@@ -129,10 +17,17 @@
     <None Include="keypair.snk" />
     <None Include="public.snk" />
   </ItemGroup>
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Update="gpl-3_0.txt">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>
     </PostBuildEvent>
+    <PackageLicenseFile>gpl-3_0.txt</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

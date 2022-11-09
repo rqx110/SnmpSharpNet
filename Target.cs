@@ -8,7 +8,7 @@ namespace SnmpSharpNet
 	/// <summary>
 	/// Community based SNMP target. Used for SNMP version 1 and version 2c.
 	/// </summary>
-	public class CTarget: ITarget
+	public class Target: ITarget
 	{
 		#region Private variables
 		/// <summary>
@@ -43,7 +43,7 @@ namespace SnmpSharpNet
 		/// <summary>
 		/// Constructor
 		/// </summary>
-		public CTarget()
+		public Target()
 		{
 			_address = new IpAddress(System.Net.IPAddress.Loopback);
 			_port = 161;
@@ -56,7 +56,7 @@ namespace SnmpSharpNet
 		/// Constructor
 		/// </summary>
 		/// <param name="addr">Target address</param>
-		public CTarget(IPAddress addr)
+		public Target(IPAddress addr)
 			: this()
 		{
 			_address.Set(addr);
@@ -66,7 +66,7 @@ namespace SnmpSharpNet
 		/// </summary>
 		/// <param name="addr">Target address</param>
 		/// <param name="community">SNMP community name to use with the target</param>
-		public CTarget(IPAddress addr, String community)
+		public Target(IPAddress addr, String community)
 			: this(addr)
 		{
 			_community = community;
@@ -77,7 +77,7 @@ namespace SnmpSharpNet
 		/// <param name="addr">Target address</param>
 		/// <param name="port">Taret UDP port number</param>
 		/// <param name="community">SNMP community name to use with the target</param>
-		public CTarget(IPAddress addr, int port, String community)
+		public Target(IPAddress addr, int port, String community)
 			: this(addr,community)
 		{
 			_port = port;
@@ -161,7 +161,7 @@ namespace SnmpSharpNet
 			set
 			{
 				if (value != SnmpVersion.Ver1 && value != SnmpVersion.Ver2)
-					throw new SnmpInvalidVersionException("CTarget is only suitable for use with SNMP v1 and v2c protocol versions.");
+					throw new SnmpInvalidVersionException("Target is only suitable for use with SNMP v1 and v2c protocol versions.");
 				_version = value;
 			}
 		}

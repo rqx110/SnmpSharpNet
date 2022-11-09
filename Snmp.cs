@@ -9,11 +9,11 @@ namespace SnmpSharpNet
 		/// <summary>
 		/// Internal event to send result of the async request to.
 		/// </summary>
-		protected event SnmpAsyncResponse _response;
+		protected event SnmpAsyncResponse Response;
 		/// <summary>
 		/// Internal storage for request target information.
 		/// </summary>
-		protected ITarget _target;
+		protected ITarget target;
 
 		#region Constructor(s)
 
@@ -21,10 +21,10 @@ namespace SnmpSharpNet
 		/// Constructor
 		/// </summary>
 		public Snmp()
-			:base()
+			:base(false)
 		{
-			_response = null;
-			_target = null;
+			Response = null;
+			target = null;
 		}
 
 		#endregion Constructor(s)
