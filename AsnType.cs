@@ -161,6 +161,8 @@ namespace SnmpSharpNet
 			{
 				// short form encoding
 				dataLen = mb[offset++];
+				if (dataLen > mb.Length - (offset))
+					dataLen = mb.Length - (offset);
 				return dataLen; // we are done
 			}
 			else
