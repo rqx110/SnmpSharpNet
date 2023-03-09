@@ -129,17 +129,13 @@ namespace SnmpSharpNet
 		/// <param name="value">String containing new class data</param>
 		public virtual void Set(String value)
 		{
-			if (value == null)
-			{
-				_data = null;
-			}
-			if (value.Length == 0)
+			if (value == null || value.Length == 0)
 			{
 				_data = null;
 			}
 			else
 			{
-				_data = System.Text.UTF8Encoding.UTF8.GetBytes(value);
+				_data = UTF8Encoding.UTF8.GetBytes(value);
 			}
 		}
 		/// <summary>
