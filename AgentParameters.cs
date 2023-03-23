@@ -44,11 +44,9 @@ namespace SnmpSharpNet
 		/// Flag that disables checking of host IP address and port number from which reply is received. If not disabled, only
 		/// replies from the host IP/port to which request was sent will be considered valid and all others will be ignored.
 		/// 
-		/// Default value is: false (reply source check is enabled)
-		/// 
-		/// Set to true if you wish to disable this check.
+		/// Default value is: IpAndPort (reply source check is enabled)
 		/// </summary>
-		protected bool _disableReplySourceCheck;
+		protected SourceCheck _replySourceCheck;
 		/// <summary>
 		/// Standard constructor
 		/// </summary>
@@ -56,7 +54,7 @@ namespace SnmpSharpNet
 		{
 			_version = new Integer32((int)SnmpVersion.Ver1);
 			_community = new OctetString("public");
-			_disableReplySourceCheck = false;
+			_replySourceCheck = SourceCheck.IpAndPort;
 		}
 		/// <summary>
 		/// Copy constructor. Initialize the class with the values of the parameter class values.
@@ -66,7 +64,7 @@ namespace SnmpSharpNet
 		{
 			_version.Value = (int)second.Version;
 			_community.Set(second.Community);
-			_disableReplySourceCheck = second.DisableReplySourceCheck;
+			_replySourceCheck = second.ReplySourceCheck;
 		}
 		/// <summary>
 		/// Constructor
@@ -102,11 +100,11 @@ namespace SnmpSharpNet
 		/// </summary>
 		/// <param name="version">SNMP Protocol version</param>
 		/// <param name="community">SNMP community name</param>
-		/// <param name="disableReplySourceCheck">Should reply source IP address/port number be checked on reply reception</param>
-		public AgentParameters(SnmpVersion version, OctetString community, bool disableReplySourceCheck)
+		/// <param name="replySourceCheck">Should reply source IP address/port number be checked on reply reception</param>
+		public AgentParameters(SnmpVersion version, OctetString community, SourceCheck replySourceCheck)
 			: this(version, community)
 		{
-			_disableReplySourceCheck = disableReplySourceCheck;
+			_replySourceCheck = replySourceCheck;
 		}
 		/// <summary>
 		/// Get/Set SNMP protocol version.
@@ -121,7 +119,7 @@ namespace SnmpSharpNet
 			}
 			set
 			{
-                if (value != SnmpVersion.Ver1 && value != SnmpVersion.Ver2)
+				if (value != SnmpVersion.Ver1 && value != SnmpVersion.Ver2)
 					throw new SnmpInvalidVersionException("Valid SNMP versions are 1 or 2");
 				_version.Value = (int)value;
 			}
@@ -149,15 +147,15 @@ namespace SnmpSharpNet
 		/// Get/Set flag that disables checking of host IP address and port number from which reply is received. If not disabled, only
 		/// replies from the host IP/port to which request was sent will be considered valid and all others will be ignored.
 		/// </summary>
-		public bool DisableReplySourceCheck
+		public SourceCheck ReplySourceCheck
 		{
 			get
 			{
-				return _disableReplySourceCheck;
+				return _replySourceCheck;
 			}
 			set
 			{
-				_disableReplySourceCheck = value;
+				_replySourceCheck = value;
 			}
 		}
 
@@ -169,7 +167,7 @@ namespace SnmpSharpNet
 		{
 			if (_community != null && _community.Length > 0 && _version != null)
 			{
-                if (_version.Value == (int)SnmpVersion.Ver1 || _version.Value == (int)SnmpVersion.Ver2)
+				if (_version.Value == (int)SnmpVersion.Ver1 || _version.Value == (int)SnmpVersion.Ver2)
 					return true;
 			}
 			return false;
@@ -202,7 +200,7 @@ namespace SnmpSharpNet
 		/// <returns>Duplicate object initialized with values from this class.</returns>
 		public object Clone()
 		{
-			return new AgentParameters(this.Version,this.Community, this.DisableReplySourceCheck);
+			return new AgentParameters(this.Version, this.Community, this.ReplySourceCheck);
 		}
 	}
 }

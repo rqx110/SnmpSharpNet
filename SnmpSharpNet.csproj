@@ -96,6 +96,7 @@
     <Compile Include="security\UserSecurityModel.cs" />
     <Compile Include="SnmpVariableType.cs" />
     <Compile Include="SnmpVersion.cs" />
+    <Compile Include="SourceCheck.cs" />
     <Compile Include="TrapAgent.cs" />
     <Compile Include="TrapPdu.cs" />
     <Compile Include="Types\Counter32.cs" />
