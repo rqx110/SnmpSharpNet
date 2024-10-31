@@ -300,7 +300,7 @@ namespace SnmpSharpNet
 				return;
 			}
 			// kill the timeout timer - there shouldn't be one active when we are sending a new request
-			if (_requestState.Timer != null)
+			if (_requestState?.Timer != null)
 			{
 				_requestState.Timer.Dispose();
 				_requestState.Timer = null;
@@ -370,7 +370,7 @@ namespace SnmpSharpNet
 		internal void ReceiveBegin()
 		{
 			// kill the timeout timer
-			if(_requestState.Timer != null)
+			if(_requestState?.Timer != null)
 			{
 				_requestState.Timer.Dispose();
 				_requestState.Timer = null;
@@ -401,7 +401,8 @@ namespace SnmpSharpNet
 				RetryAsyncRequest();
 				return;
 			}
-			_requestState.Timer = new Timer(new TimerCallback(AsyncRequestTimerCallback), null, _requestState.Timeout, System.Threading.Timeout.Infinite);
+			if (_requestState != null)
+				_requestState.Timer = new Timer(new TimerCallback(AsyncRequestTimerCallback), null, _requestState.Timeout, System.Threading.Timeout.Infinite);
 		}
 		/// <summary>
 		/// Internal retry function. Checks if request has reached maximum number of retries and either resends the request if not reached,
@@ -410,7 +411,7 @@ namespace SnmpSharpNet
 		internal void RetryAsyncRequest()
 		{
 			// kill the timer if one is active
-			if (_requestState.Timer != null)
+			if (_requestState?.Timer != null)
 			{
 				_requestState.Timer.Dispose();
 				_requestState.Timer = null;
@@ -448,7 +449,7 @@ namespace SnmpSharpNet
 		internal void ReceiveFromCallback(IAsyncResult ar)
 		{
 			// kill the timer if one is active
-			if (_requestState.Timer != null)
+			if (_requestState?.Timer != null)
 			{
 				_requestState.Timer.Dispose();
 				_requestState.Timer = null;
@@ -457,7 +458,7 @@ namespace SnmpSharpNet
 			{
                 _busy = false;
 				_requestState = null;
-				if( _socket == null )
+				if( _socket != null )
 					_asyncCallback(AsyncRequestResult.Terminated, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
 				else
 					_asyncCallback(AsyncRequestResult.Terminated, new IPEndPoint(IPAddress.Any, 0), null, 0);
