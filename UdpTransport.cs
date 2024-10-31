@@ -48,7 +48,7 @@ namespace SnmpSharpNet
 		/// 
 		/// This value is set in the AgentParameters class and is only valid for SNMP v1 and v2c requests.
 		/// </summary>
-		protected bool _noSourceCheck;
+		protected SourceCheck _sourceCheck;
 
 		/// <summary>
 		/// Constructor. Initializes and binds the Socket class
@@ -143,19 +143,19 @@ namespace SnmpSharpNet
 					{
 						recv = 0; // Packet too large
 					}
-                    else if (ex.ErrorCode == 10050)
-                    {
-                        throw new SnmpNetworkException(ex, "Network error: Destination network is down.");
-                    }
-                    else if (ex.ErrorCode == 10051)
-                    {
-                        throw new SnmpNetworkException(ex, "Network error: destination network is unreachable.");
-                    }
-                    else if( ex.ErrorCode == 10054)
-                    {
-                        throw new SnmpNetworkException(ex, "Network error: connection reset by peer.");
-                    }
-                    else if (ex.ErrorCode == 10064)
+					else if (ex.ErrorCode == 10050)
+					{
+						throw new SnmpNetworkException(ex, "Network error: Destination network is down.");
+					}
+					else if (ex.ErrorCode == 10051)
+					{
+						throw new SnmpNetworkException(ex, "Network error: destination network is unreachable.");
+					}
+					else if( ex.ErrorCode == 10054)
+					{
+						throw new SnmpNetworkException(ex, "Network error: connection reset by peer.");
+					}
+					else if (ex.ErrorCode == 10064)
 					{
 						throw new SnmpNetworkException(ex, "Network error: remote host is down.");
 					}
@@ -179,16 +179,33 @@ namespace SnmpSharpNet
 				if (recv > 0)
 				{
 					IPEndPoint remEP = remote as IPEndPoint;
-					if ( ! _noSourceCheck && ! remEP.Equals(netPeer))
+
+					var passSourceCheck = true;
+					switch (_sourceCheck)
 					{
-                        if (remEP.Address != netPeer.Address)
-                        {
-                            Console.WriteLine("Address miss-match {0} != {1}", remEP.Address, netPeer.Address);
-                        }
-                        if (remEP.Port != netPeer.Port)
-                        {
-                            Console.WriteLine("Port # miss-match {0} != {1}", remEP.Port, netPeer.Port);
-                        }
+						case SourceCheck.IpOnly: // Fall through
+						case SourceCheck.IpAndPort:
+							if (remEP.Port != netPeer.Port)
+							{
+								Console.WriteLine("Port # miss-match {0} != {1}", remEP.Port, netPeer.Port);
+								passSourceCheck = false;
+							}
+
+							if (_sourceCheck == SourceCheck.IpAndPort && !remEP.Address.Equals(netPeer.Address))
+							{
+								Console.WriteLine("Address miss-match {0} != {1}", remEP.Address, netPeer.Address);
+								passSourceCheck = false;
+							}
+
+							break;
+						case SourceCheck.None:
+							break;
+						default:
+							throw new ArgumentOutOfRangeException(nameof(_sourceCheck));
+					}
+
+					if (!passSourceCheck)
+					{
 						/* Not good, we got a response from somebody other then who we requested a response from */
 						retry++;
 						if (retry > retries)
@@ -318,9 +335,9 @@ namespace SnmpSharpNet
 			}
 			catch
 			{
-                _busy = false;
-                _requestState = null;
-                _asyncCallback(AsyncRequestResult.SocketSendError, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
+				_busy = false;
+				_requestState = null;
+				_asyncCallback(AsyncRequestResult.SocketSendError, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
 			}
 		}
 		/// <summary>
@@ -355,8 +372,8 @@ namespace SnmpSharpNet
 			}
 			if (sentLength != _requestState.PacketLength)
 			{
-                _busy = false;
-                _requestState = null;
+				_busy = false;
+				_requestState = null;
 				_asyncCallback(AsyncRequestResult.SocketSendError, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
 				return;
 			}
@@ -417,7 +434,7 @@ namespace SnmpSharpNet
 			}
 			if (_socket == null || !_busy || _requestState == null)
 			{
-                _busy = false;
+				_busy = false;
 				_requestState = null;
 				if( _socket != null )
 					_asyncCallback(AsyncRequestResult.Terminated, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
@@ -430,7 +447,7 @@ namespace SnmpSharpNet
 			_requestState.CurrentRetry += 1;
 			if (_requestState.CurrentRetry >= _requestState.MaxRetries)
 			{
-                _busy = false;
+				_busy = false;
 				_requestState = null;
 				_asyncCallback(AsyncRequestResult.Timeout, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);
 				return;
@@ -455,7 +472,7 @@ namespace SnmpSharpNet
 			}
 			if (_socket == null || !_busy || _requestState == null)
 			{
-                _busy = false;
+				_busy = false;
 				_requestState = null;
 				if( _socket == null )
 					_asyncCallback(AsyncRequestResult.Terminated, new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetwork ? IPAddress.Any : IPAddress.IPv6Any, 0), null, 0);

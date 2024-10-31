@@ -59,7 +59,7 @@ namespace SnmpSharpNet
 		public System.Net.IPAddress Address
 		{
 			get { return _address; }
-			set { 
+			set {
 				_address = value;
 				if (_address.AddressFamily == AddressFamily.InterNetworkV6 && !base.IsIPv6)
 					base.initSocket(true);
@@ -123,7 +123,7 @@ namespace SnmpSharpNet
 			_timeout = 2000;
 			_retry = 2;
 		}
-		
+
 		/// <summary>Make SNMP Request</summary>
 		/// <remarks>
 		/// Make SNMP request. With this method you can make blocked SNMP version 1, 2 and 3 requests of type GET,
@@ -163,7 +163,7 @@ namespace SnmpSharpNet
 					throw new SnmpAuthenticationException("Authentication password not specified.");
 				if (secparams.Privacy != PrivacyProtocols.None && secparams.PrivacySecret.Length <= 0)
 					throw new SnmpPrivacyException("Privacy password not specified.");
-				_noSourceCheck = false; // this option is not valid for SNMP v3 requests
+				_sourceCheck = SourceCheck.IpAndPort; // this option is not valid for SNMP v3 requests
 				ScopedPdu outPdu = new ScopedPdu(pdu);
 				SnmpV3Packet packet = new SnmpV3Packet(outPdu);
 				secparams.InitializePacket(packet);
@@ -172,7 +172,7 @@ namespace SnmpSharpNet
 				else
 					outPacket = packet.encode();
 			}
-            else if (agentParameters.Version == SnmpVersion.Ver1)
+			else if (agentParameters.Version == SnmpVersion.Ver1)
 			{
 				AgentParameters param = (AgentParameters)agentParameters;
 				if (!param.Valid())
@@ -181,9 +181,9 @@ namespace SnmpSharpNet
 				packet.Pdu.Set(pdu);
 				packet.Community.Set(param.Community);
 				outPacket = packet.encode();
-				_noSourceCheck = param.DisableReplySourceCheck;
+				_sourceCheck = param.ReplySourceCheck;
 			}
-            else if (agentParameters.Version == SnmpVersion.Ver2)
+			else if (agentParameters.Version == SnmpVersion.Ver2)
 			{
 				AgentParameters param = (AgentParameters)agentParameters;
 				if (!param.Valid())
@@ -191,7 +191,7 @@ namespace SnmpSharpNet
 				SnmpV2Packet packet = new SnmpV2Packet();
 				packet.Pdu.Set(pdu);
 				packet.Community.Set(param.Community);
-				_noSourceCheck = param.DisableReplySourceCheck;
+				_sourceCheck = param.ReplySourceCheck;
 				outPacket = packet.encode();
 			}
 			else
@@ -317,7 +317,7 @@ namespace SnmpSharpNet
 					// _response(AsyncRequestResult.PrivacyError, null);
 					return false;
 				}
-				_noSourceCheck = false; // this option is not valid for SNMP v3 requests
+				_sourceCheck = SourceCheck.IpAndPort; // this option is not valid for SNMP v3 requests
 				ScopedPdu outPdu = new ScopedPdu(pdu);
 				outPdu.ContextEngineId.Set(secparams.EngineId);
 				outPdu.ContextName.Set(secparams.ContextName);
@@ -340,11 +340,11 @@ namespace SnmpSharpNet
 			else if (agentParameters.Version == (int)SnmpVersion.Ver1)
 			{
 				AgentParameters param = (AgentParameters)agentParameters;
-				_noSourceCheck = param.DisableReplySourceCheck;
+				_sourceCheck = param.ReplySourceCheck;
 				SnmpV1Packet packet = new SnmpV1Packet();
 				packet.Pdu.Set(pdu);
 				packet.Community.Set(param.Community);
-				try 
+				try
 				{
 					outPacket = packet.encode();
 				}
@@ -358,7 +358,7 @@ namespace SnmpSharpNet
 			else if (agentParameters.Version == SnmpVersion.Ver2)
 			{
 				AgentParameters param = (AgentParameters)agentParameters;
-				_noSourceCheck = param.DisableReplySourceCheck;
+				_sourceCheck = param.ReplySourceCheck;
 				SnmpV2Packet packet = new SnmpV2Packet();
 				packet.Pdu.Set(pdu);
 				packet.Community.Set(param.Community);
@@ -504,7 +504,7 @@ namespace SnmpSharpNet
 						}
 						else
 							_response(AsyncRequestResult.NoError, packet);
-				}
+					}
 				}
 			}
 		}

@@ -122,6 +122,11 @@ namespace SnmpSharpNet
 		/// </summary>
 		protected bool _suppressExceptions = true;
 
+		/// <summary>
+		/// Should the source be checked on replies
+		/// </summary>
+		private readonly SourceCheck _sourceCheck = SourceCheck.IpAndPort;
+
 		/// <summary>Constructor.</summary>
 		/// <remarks>
 		/// Class is initialized to default values. Peer IP address is set to loopback, peer port number
@@ -201,6 +206,21 @@ namespace SnmpSharpNet
 		{
 			_timeout = timeout;
 			_retry = retry;
+		}
+
+		/// <summary>
+		/// Constructor.
+		/// </summary>
+		/// <param name="peerName">Peer name or IP address</param>
+		/// <param name="peerPort">Peer UDP port number</param>
+		/// <param name="community">SNMP community name</param>
+		/// <param name="timeout">SNMP request timeout</param>
+		/// <param name="retry">Maximum number of retries excluding the first request (0 = 1 request is sent)</param>
+		/// <param name="sourceCheck">Should the source be checked on replies</param>
+		public SimpleSnmp(string peerName, int peerPort, string community, int timeout, int retry, SourceCheck sourceCheck)
+			: this(peerName, peerPort, community, timeout, retry)
+		{
+			_sourceCheck = sourceCheck;
 		}
 
 		/// <summary>
@@ -383,7 +403,7 @@ namespace SnmpSharpNet
 				}
 				else
 				{
-					param = new AgentParameters(version, new OctetString(_community));
+					param = new AgentParameters(version, new OctetString(_community), _sourceCheck);
 				}
 
 				SnmpPacket result = _target.Request(pdu, param);
@@ -587,7 +607,7 @@ namespace SnmpSharpNet
 				}
 				else
 				{
-					param = new AgentParameters(version, new OctetString(_community));
+					param = new AgentParameters(version, new OctetString(_community), _sourceCheck);
 				}
 
 				SnmpPacket result = _target.Request(pdu, param);
@@ -815,7 +835,7 @@ namespace SnmpSharpNet
 				}
 				else
 				{
-					param = new AgentParameters(version, new OctetString(_community));
+					param = new AgentParameters(version, new OctetString(_community), _sourceCheck);
 				}
 
 				SnmpPacket result = _target.Request(pdu, param);
@@ -1015,7 +1035,7 @@ namespace SnmpSharpNet
 				}
 				else
 				{
-					param = new AgentParameters(version, new OctetString(_community));
+					param = new AgentParameters(version, new OctetString(_community), _sourceCheck);
 				}
 
 				SnmpPacket result = _target.Request(pdu, param);
