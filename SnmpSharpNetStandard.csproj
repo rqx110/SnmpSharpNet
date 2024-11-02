@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="CTarget.cs" />
+    <Compile Remove="ITarget.cs" />
+    <Compile Remove="SMIDataType.cs" />
+    <Compile Remove="SMIDataTypeCode.cs" />
+    <Compile Remove="Snmp.cs" />
+    <Compile Remove="SnmpV1PduErrorStatus.cs" />
+    <Compile Remove="SnmpV1TrapGenericErrorCode.cs" />
+    <Compile Remove="SnmpV2PduErrorStatus.cs" />
+    <Compile Remove="UTarget.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove=".gitignore" />
+    <None Remove="gpl-3_0.txt" />
+    <None Remove="lgpl.txt" />
+    <None Remove="README.md" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Properties\" />
+  </ItemGroup>
+
+</Project>
