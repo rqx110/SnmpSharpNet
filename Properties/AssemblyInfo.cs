@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("SnmpSharpNet")]
 [assembly: AssemblyDescription("dotNet Simple Network Management Protocol Implementation")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Milan Sinadinovic")]
+[assembly: AssemblyCompany("Atos BNCS")]
 [assembly: AssemblyProduct("SnmpSharpNet")]
-[assembly: AssemblyCopyright("Copyright © Milan Sinadinovic 2008 - 2014")]
+[assembly: AssemblyCopyright("Copyright © Milan Sinadinovic 2008 - 2014, Scott Harman 2021")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
